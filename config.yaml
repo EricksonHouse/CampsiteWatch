@@ -25,6 +25,16 @@ coverage:
       - river
       - ada
     exclude_ada: true
+    unit_ids:
+      - '459.1'
+      - '862.1'
+      - '1039.1'
+      - '1203.1'
+      - '1366.1'
+      - '1522.1'
+      - '1679.1'
+      - '1822.1'
+      - '1967.1'
   - name: Van Damme Sp 2026
     facility_id: '741'
     start_date: '2026-11-24'
