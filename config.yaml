@@ -38,20 +38,26 @@ speed:
 # Polled at speed.coverage_interval_minutes.
 # ---------------------------------------------------------------------------
 coverage:
-  - name: "Pfeiffer Big Sur SP"
-    facility_id: "REPLACE_ME"        # find via `python campwatch.py lookup "Pfeiffer Big Sur"`
-    start_date: "2026-09-01"
-    end_date: "2026-11-30"
+  - name: "Sonoma Coast State Park"
+    facility_id: "706"        # find via `python campwatch.py lookup "Pfeiffer Big Sur"`
+    start_date: "2026-11-25"
+    end_date: "2027-01-30"
     keywords: ["premium", "hookup", "river", "ada"]   # matched against site name/short name
-    exclude_ada: false               # set true to skip ADA-designated sites if you don't need one
+    exclude_ada: true               # set true to skip ADA-designated sites if you don't need one
 
-  - name: "San Elijo SB"
-    facility_id: "REPLACE_ME"
-    start_date: "2026-09-01"
-    end_date: "2026-10-15"
+  - name: "Van Damme Sp"
+    facility_id: "741"
+    start_date: "2026-11-24"
+    end_date: "2026-11-30"
     keywords: ["premium", "bluff", "ocean"]
-    exclude_ada: false
-
+    exclude_ada: true
+ 
+ - name: "Van Damme Sp"
+    facility_id: "743"
+    start_date: "2027-04-01"
+    end_date: "2027-11-01"
+    keywords: ["premium", "bluff", "ocean"]
+    exclude_ada: true
 # ---------------------------------------------------------------------------
 # TARGETED -- narrow, high-frequency watches for a specific trip you actually
 # have planned. Polled faster (speed.targeted_interval_minutes, boosted during
