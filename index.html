@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>campwatch</title>
+<link rel="manifest" href="manifest.json">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="campwatch">
+<style>
+  :root {
+    --bg: #0f1512;
+    --card: #161f1a;
+    --border: #2a352e;
+    --text: #eaf0ec;
+    --muted: #93a39a;
+    --accent: #4caf7d;
+    --accent-dim: #2e5c44;
+    --danger: #d9695f;
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  body {
+    margin: 0; background: var(--bg); color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+    padding-bottom: 60px;
+  }
+  header {
+    padding: 20px 16px 12px; position: sticky; top: 0; background: var(--bg);
+    z-index: 10; border-bottom: 1px solid var(--border);
+  }
+  h1 { font-size: 20px; margin: 0; }
+  .subtitle { color: var(--muted); font-size: 13px; margin-top: 2px; }
+  main { padding: 12px 16px 40px; max-width: 640px; margin: 0 auto; }
+  .card {
+    background: var(--card); border: 1px solid var(--border); border-radius: 14px;
+    padding: 16px; margin-bottom: 14px;
+  }
+  .card h2 { font-size: 15px; margin: 0 0 12px; display: flex; align-items: center; justify-content: space-between; }
+  .card h2 .hint { font-size: 11px; color: var(--muted); font-weight: normal; }
+  label { display: block; font-size: 12px; color: var(--muted); margin: 10px 0 4px; }
+  label:first-child { margin-top: 0; }
+  input[type=text], input[type=number], input[type=time], input[type=date], select, textarea {
+    width: 100%; padding: 10px 12px; border-radius: 10px; border: 1px solid var(--border);
+    background: #0c120f; color: var(--text); font-size: 15px; font-family: inherit;
+  }
+  input:focus, select:focus, textarea:focus { outline: 2px solid var(--accent-dim); }
+  .row { display: flex; gap: 10px; }
+  .row > * { flex: 1; }
+  .checkbox-row { display: flex; align-items: center; gap: 8px; margin: 10px 0; }
+  .checkbox-row input { width: 18px; height: 18px; }
+  .checkbox-row label { margin: 0; color: var(--text); font-size: 14px; }
+  button {
+    font-family: inherit; font-size: 15px; border-radius: 10px; border: none;
+    padding: 12px 16px; cursor: pointer; font-weight: 600;
+  }
+  .btn-primary { background: var(--accent); color: #08150e; width: 100%; }
+  .btn-secondary { background: transparent; color: var(--text); border: 1px solid var(--border); width: 100%; }
+  .btn-danger { background: transparent; color: var(--danger); border: 1px solid var(--danger); padding: 8px 12px; font-size: 13px; }
+  .btn-small { background: var(--accent-dim); color: var(--text); padding: 8px 12px; font-size: 13px; }
+  .watch-item {
+    border: 1px solid var(--border); border-radius: 10px; padding: 12px; margin-bottom: 10px; background: #0c120f;
+  }
+  .watch-item .watch-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+  .watch-item .watch-header span { font-weight: 600; font-size: 14px; }
+  .toolbar-bottom {
+    position: fixed; bottom: 0; left: 0; right: 0; background: var(--bg);
+    border-top: 1px solid var(--border); padding: 10px 16px calc(10px + env(safe-area-inset-bottom));
+    display: flex; gap: 10px; z-index: 20;
+  }
+  .status { font-size: 13px; padding: 10px 12px; border-radius: 10px; margin-bottom: 12px; display: none; }
+  .status.show { display: block; }
+  .status.ok { background: #14301f; color: #8fe3b1; }
+  .status.err { background: #3a1a17; color: #f0a89f; }
+  .status.busy { background: #17222d; color: #9bc4e6; }
+  #setupScreen { display: flex; }
+  #appScreen { display: none; }
+  .field-note { font-size: 11px; color: var(--muted); margin-top: 4px; }
+  a { color: var(--accent); }
+</style>
+</head>
+<body>
+
+<div id="setupScreen">
+  <main style="padding-top: 40px;">
+    <h1>Connect to campwatch</h1>
+    <p class="subtitle" style="margin-bottom:20px;">This runs entirely in your browser and talks
+      directly to GitHub -- nothing is sent anywhere else. Your token is stored only on this
+      device (localStorage).</p>
+
+    <div class="card">
+      <label>GitHub username / org</label>
+      <input type="text" id="setupOwner" placeholder="e.g. banyan-e">
+      <label>Repository name</label>
+      <input type="text" id="setupRepo" placeholder="e.g. campwatch">
+      <label>Personal access token <span class="field-note" style="display:inline">(fine-grained, this repo only, Contents: read/write, Actions: read/write)</span></label>
+      <input type="text" id="setupToken" placeholder="github_pat_...">
+      <div class="field-note">Create one at github.com &rarr; Settings &rarr; Developer settings &rarr;
+        Personal access tokens &rarr; Fine-grained tokens. Scope it to only this repository.</div>
+    </div>
+
+    <div id="setupStatus" class="status"></div>
+    <button class="btn-primary" onclick="connect()">Connect</button>
+  </main>
+</div>
+
+<div id="appScreen">
+  <header>
+    <h1>campwatch</h1>
+    <div class="subtitle" id="repoLabel"></div>
+  </header>
+  <main>
+    <div id="topStatus" class="status"></div>
+
+    <div class="card">
+      <h2>Active hours <span class="hint">when alerts are sent</span></h2>
+      <div class="row">
+        <div><label>From</label><input type="time" id="activeStart"></div>
+        <div><label>To</label><input type="time" id="activeEnd"></div>
+      </div>
+      <label>Timezone</label>
+      <select id="timezone">
+        <option value="America/Los_Angeles">Pacific (California)</option>
+        <option value="America/Denver">Mountain</option>
+        <option value="America/Chicago">Central</option>
+        <option value="America/New_York">Eastern</option>
+      </select>
+    </div>
+
+    <div class="card">
+      <h2>Scan speed</h2>
+      <label>Coverage watches -- check every (minutes)</label>
+      <input type="number" id="coverageInterval" min="5">
+      <label>Targeted watches -- check every (minutes)</label>
+      <input type="number" id="targetedInterval" min="1">
+      <div class="checkbox-row">
+        <input type="checkbox" id="peakEnabled">
+        <label for="peakEnabled">Speed boost during peak hours</label>
+      </div>
+      <div class="row">
+        <div><label>Peak from</label><input type="time" id="peakStart"></div>
+        <div><label>Peak to</label><input type="time" id="peakEnd"></div>
+      </div>
+      <label>During peak, targeted watches check every (minutes)</label>
+      <input type="number" id="peakInterval" min="1">
+    </div>
+
+    <div class="card">
+      <h2>Coverage watches <span class="hint">broad, multiple parks</span></h2>
+      <div id="coverageList"></div>
+      <button class="btn-small" onclick="addWatch('coverage')">+ Add coverage watch</button>
+    </div>
+
+    <div class="card">
+      <h2>Targeted watches <span class="hint">one specific trip, checked faster</span></h2>
+      <div id="targetedList"></div>
+      <button class="btn-small" onclick="addWatch('targeted')">+ Add targeted watch</button>
+    </div>
+
+    <div class="card">
+      <h2>Notifications</h2>
+      <div class="checkbox-row"><input type="checkbox" id="notifyEmail"><label for="notifyEmail">Email</label></div>
+      <div class="checkbox-row"><input type="checkbox" id="notifySms"><label for="notifySms">SMS</label></div>
+      <div class="checkbox-row"><input type="checkbox" id="notifyNtfy"><label for="notifyNtfy">Push (ntfy)</label></div>
+      <div class="field-note">Credentials (passwords, topic names) are managed as GitHub
+        Secrets, not here -- that's a one-time setup, not something you'll change often.
+        This just turns each channel on/off.</div>
+    </div>
+
+    <button class="btn-secondary" onclick="disconnect()" style="margin-top:4px;">Disconnect this device</button>
+  </main>
+
+  <div class="toolbar-bottom">
+    <button class="btn-secondary" style="flex:1" onclick="triggerScanNow()">Scan now</button>
+    <button class="btn-primary" style="flex:2" onclick="saveConfig()">Save changes</button>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/js-yaml/4.1.0/js-yaml.min.js"></script>
+<script>
+let state = { owner: '', repo: '', token: '', sha: '', config: null };
+
+function loadConnection() {
+  const raw = localStorage.getItem('campwatch_conn');
+  if (!raw) return false;
+  const c = JSON.parse(raw);
+  state.owner = c.owner; state.repo = c.repo; state.token = c.token;
+  return true;
+}
+
+function saveConnection() {
+  localStorage.setItem('campwatch_conn', JSON.stringify({
+    owner: state.owner, repo: state.repo, token: state.token
+  }));
+}
+
+function showStatus(id, msg, kind) {
+  const el = document.getElementById(id);
+  el.textContent = msg;
+  el.className = 'status show ' + kind;
+}
+
+function ghHeaders() {
+  return {
+    'Authorization': 'Bearer ' + state.token,
+    'Accept': 'application/vnd.github+json',
+    'X-GitHub-Api-Version': '2022-11-28'
+  };
+}
+
+async function connect() {
+  state.owner = document.getElementById('setupOwner').value.trim();
+  state.repo = document.getElementById('setupRepo').value.trim();
+  state.token = document.getElementById('setupToken').value.trim();
+  if (!state.owner || !state.repo || !state.token) {
+    showStatus('setupStatus', 'Fill in all three fields.', 'err');
+    return;
+  }
+  showStatus('setupStatus', 'Connecting...', 'busy');
+  try {
+    await loadConfigFromGitHub();
+    saveConnection();
+    enterApp();
+  } catch (e) {
+    showStatus('setupStatus', 'Could not connect: ' + e.message, 'err');
+  }
+}
+
+function disconnect() {
+  localStorage.removeItem('campwatch_conn');
+  location.reload();
+}
+
+async function loadConfigFromGitHub() {
+  const url = `https://api.github.com/repos/${state.owner}/${state.repo}/contents/config.yaml`;
+  const resp = await fetch(url, { headers: ghHeaders() });
+  if (!resp.ok) {
+    const body = await resp.json().catch(() => ({}));
+    throw new Error(`${resp.status} ${body.message || resp.statusText}`);
+  }
+  const data = await resp.json();
+  state.sha = data.sha;
+  const yamlText = decodeURIComponent(escape(atob(data.content)));
+  state.config = jsyaml.load(yamlText);
+}
+
+function enterApp() {
+  document.getElementById('setupScreen').style.display = 'none';
+  document.getElementById('appScreen').style.display = 'block';
+  document.getElementById('repoLabel').textContent = `${state.owner}/${state.repo}`;
+  populateForm();
+}
+
+function populateForm() {
+  const c = state.config;
+  document.getElementById('activeStart').value = c.schedule.active_hours[0].start;
+  document.getElementById('activeEnd').value = c.schedule.active_hours[0].end;
+  document.getElementById('timezone').value = c.schedule.timezone;
+
+  document.getElementById('coverageInterval').value = c.speed.coverage_interval_minutes;
+  document.getElementById('targetedInterval').value = c.speed.targeted_interval_minutes;
+  document.getElementById('peakEnabled').checked = !!c.speed.peak.enabled;
+  document.getElementById('peakStart').value = c.speed.peak.windows[0]?.start || '17:00';
+  document.getElementById('peakEnd').value = c.speed.peak.windows[0]?.end || '21:00';
+  document.getElementById('peakInterval').value = c.speed.peak.interval_minutes;
+
+  document.getElementById('notifyEmail').checked = !!c.notifications.email?.enabled;
+  document.getElementById('notifySms').checked = !!c.notifications.sms?.enabled;
+  document.getElementById('notifyNtfy').checked = !!c.notifications.ntfy?.enabled;
+
+  renderWatchList('coverage');
+  renderWatchList('targeted');
+}
+
+function renderWatchList(type) {
+  const container = document.getElementById(type + 'List');
+  container.innerHTML = '';
+  (state.config[type] || []).forEach((watch, idx) => {
+    container.appendChild(renderWatchItem(type, watch, idx));
+  });
+}
+
+function renderWatchItem(type, watch, idx) {
+  const div = document.createElement('div');
+  div.className = 'watch-item';
+  div.innerHTML = `
+    <div class="watch-header">
+      <span>${watch.name || 'New watch'}</span>
+      <button class="btn-danger" onclick="removeWatch('${type}', ${idx})">Remove</button>
+    </div>
+    <label>Name</label>
+    <input type="text" data-field="name" value="${esc(watch.name || '')}" placeholder="e.g. Pfeiffer Big Sur SP">
+    <label>Facility ID <span class="field-note" style="display:inline">(from the lookup command)</span></label>
+    <input type="text" data-field="facility_id" value="${esc(watch.facility_id || '')}">
+    <div class="row">
+      <div><label>Start date</label><input type="date" data-field="start_date" value="${watch.start_date || ''}"></div>
+      <div><label>End date</label><input type="date" data-field="end_date" value="${watch.end_date || ''}"></div>
+    </div>
+    <label>Keywords <span class="field-note" style="display:inline">(comma-separated)</span></label>
+    <input type="text" data-field="keywords" value="${esc((watch.keywords || []).join(', '))}" placeholder="premium, hookup, bluff">
+    <div class="checkbox-row">
+      <input type="checkbox" data-field="exclude_ada" ${watch.exclude_ada ? 'checked' : ''}>
+      <label>Exclude ADA sites</label>
+    </div>
+  `;
+  div.querySelectorAll('[data-field]').forEach(input => {
+    input.addEventListener('change', () => updateWatchField(type, idx, input));
+  });
+  return div;
+}
+
+function updateWatchField(type, idx, input) {
+  const field = input.dataset.field;
+  const watch = state.config[type][idx];
+  if (field === 'keywords') {
+    watch.keywords = input.value.split(',').map(s => s.trim()).filter(Boolean);
+  } else if (field === 'exclude_ada') {
+    watch.exclude_ada = input.checked;
+  } else {
+    watch[field] = input.value;
+  }
+  if (field === 'name') renderWatchList(type); // refresh header label
+}
+
+function addWatch(type) {
+  if (!state.config[type]) state.config[type] = [];
+  state.config[type].push({
+    name: 'New watch', facility_id: '', start_date: '', end_date: '',
+    keywords: ['premium'], exclude_ada: false
+  });
+  renderWatchList(type);
+}
+
+function removeWatch(type, idx) {
+  state.config[type].splice(idx, 1);
+  renderWatchList(type);
+}
+
+function esc(s) {
+  return String(s).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
+}
+
+function collectFormIntoConfig() {
+  const c = state.config;
+  c.schedule.active_hours[0].start = document.getElementById('activeStart').value;
+  c.schedule.active_hours[0].end = document.getElementById('activeEnd').value;
+  c.schedule.timezone = document.getElementById('timezone').value;
+
+  c.speed.coverage_interval_minutes = Number(document.getElementById('coverageInterval').value);
+  c.speed.targeted_interval_minutes = Number(document.getElementById('targetedInterval').value);
+  c.speed.peak.enabled = document.getElementById('peakEnabled').checked;
+  c.speed.peak.windows = [{
+    start: document.getElementById('peakStart').value,
+    end: document.getElementById('peakEnd').value
+  }];
+  c.speed.peak.interval_minutes = Number(document.getElementById('peakInterval').value);
+
+  c.notifications.email = c.notifications.email || {};
+  c.notifications.sms = c.notifications.sms || {};
+  c.notifications.ntfy = c.notifications.ntfy || {};
+  c.notifications.email.enabled = document.getElementById('notifyEmail').checked;
+  c.notifications.sms.enabled = document.getElementById('notifySms').checked;
+  c.notifications.ntfy.enabled = document.getElementById('notifyNtfy').checked;
+}
+
+async function saveConfig() {
+  collectFormIntoConfig();
+  showStatus('topStatus', 'Saving to GitHub...', 'busy');
+  try {
+    const yamlText = jsyaml.dump(state.config, { lineWidth: 100 });
+    const url = `https://api.github.com/repos/${state.owner}/${state.repo}/contents/config.yaml`;
+    const resp = await fetch(url, {
+      method: 'PUT',
+      headers: ghHeaders(),
+      body: JSON.stringify({
+        message: 'Update config via campwatch mobile UI',
+        content: btoa(unescape(encodeURIComponent(yamlText))),
+        sha: state.sha
+      })
+    });
+    if (!resp.ok) {
+      const body = await resp.json().catch(() => ({}));
+      throw new Error(`${resp.status} ${body.message || resp.statusText}`);
+    }
+    const data = await resp.json();
+    state.sha = data.content.sha;
+    showStatus('topStatus', 'Saved. Next scheduled run will use these settings.', 'ok');
+  } catch (e) {
+    showStatus('topStatus', 'Save failed: ' + e.message, 'err');
+  }
+}
+
+async function triggerScanNow() {
+  showStatus('topStatus', 'Triggering a scan...', 'busy');
+  try {
+    const url = `https://api.github.com/repos/${state.owner}/${state.repo}/actions/workflows/campwatch.yml/dispatches`;
+    const resp = await fetch(url, {
+      method: 'POST',
+      headers: ghHeaders(),
+      body: JSON.stringify({ ref: 'main' })
+    });
+    if (!resp.ok) {
+      const body = await resp.json().catch(() => ({}));
+      throw new Error(`${resp.status} ${body.message || resp.statusText}`);
+    }
+    showStatus('topStatus', 'Scan triggered -- check the Actions tab in a few seconds, or just wait for the notification.', 'ok');
+  } catch (e) {
+    showStatus('topStatus', 'Trigger failed: ' + e.message, 'err');
+  }
+}
+
+(async function init() {
+  if (loadConnection()) {
+    try {
+      await loadConfigFromGitHub();
+      enterApp();
+    } catch (e) {
+      document.getElementById('setupOwner').value = state.owner;
+      document.getElementById('setupRepo').value = state.repo;
+      document.getElementById('setupToken').value = state.token;
+      showStatus('setupStatus', 'Reconnect needed: ' + e.message, 'err');
+    }
+  }
+})();
+</script>
+</body>
+</html>
