@@ -90,8 +90,8 @@ notifications:
     sms_gateway_address: "5551234567@txt.att.net"   # AT&T; see README for other carriers
 
   ntfy:
-    enabled: false
-    topic: "REPLACE_WITH_A_HARD_TO_GUESS_TOPIC_NAME"
+    enabled: true
+    topic: "State Parks Campsite Watcher App"
     server: "https://ntfy.sh"
     priority: "high"
 
