@@ -38,7 +38,7 @@
     padding: 16px; margin-bottom: 14px;
   }
   .card h2 { font-size: 15px; margin: 0 0 12px; display: flex; align-items: center; justify-content: space-between; cursor: pointer; user-select: none; }
-  .card h2 .hint { font-size: 11px; color: var(--muted); font-weight: normal; }
+  .card h2 .hint { font-size: 11px; color: var(--muted); font-weight: normal; margin-left: 8px; }
   .card h2 .chevron { color: var(--muted); font-size: 20px; transform: rotate(90deg); transition: transform 0.15s; margin-left: auto; padding-left: 8px; }
   .card.collapsed h2 { margin-bottom: 0; }
   .card.collapsed h2 .chevron { transform: rotate(0deg); }
@@ -365,7 +365,7 @@ function renderWatchItem(type, watch, idx) {
 
   div.innerHTML = `
     <div class="watch-header" onclick="toggleWatchExpanded('${type}', ${idx})">
-      <span>${esc(watch.name || 'New watch')}<span class="watch-summary">${esc(summary)}</span></span>
+      <span>${idx + 1}. ${esc(watch.name || 'New watch')}<span class="watch-summary">${esc(summary)}</span></span>
       <span class="chevron">&rsaquo;</span>
     </div>
     <div class="watch-body">
@@ -403,10 +403,6 @@ function renderWatchItem(type, watch, idx) {
     </div>
     <label>Keywords <span class="field-note" style="display:inline">(comma-separated, ignored if specific sites are picked below)</span></label>
     <input type="text" data-field="keywords" value="${esc((watch.keywords || []).join(', '))}" placeholder="premium, hookup, bluff">
-    <div class="checkbox-row">
-      <input type="checkbox" data-field="exclude_ada" ${watch.exclude_ada ? 'checked' : ''}>
-      <label>Exclude ADA sites</label>
-    </div>
     <label>Specific sites <span class="field-note" style="display:inline">(optional -- tap to pick exact sites instead of matching by keyword)</span></label>
     <div class="site-picker" data-site-picker>
       ${renderSitePickerContents(type, idx, siteRef, unitIds)}
@@ -465,8 +461,6 @@ function updateWatchField(type, idx, input) {
   const watch = state.config[type][idx];
   if (field === 'keywords') {
     watch.keywords = input.value.split(',').map(s => s.trim()).filter(Boolean);
-  } else if (field === 'exclude_ada') {
-    watch.exclude_ada = input.checked;
   } else {
     watch[field] = input.value;
   }
@@ -483,7 +477,7 @@ function addWatch(type) {
   if (!state.config[type]) state.config[type] = [];
   state.config[type].push({
     name: 'New watch', facility_id: '', start_date: '', end_date: '',
-    keywords: ['premium'], exclude_ada: false, unit_ids: []
+    keywords: ['premium'], unit_ids: []
   });
   // Auto-expand the one you just added -- collapsing it immediately after
   // tapping "+ Add" would be a bad first impression.
@@ -564,4 +558,10 @@ async function saveConfig() {
       document.getElementById('setupOwner').value = state.owner;
       document.getElementById('setupRepo').value = state.repo;
       document.getElementById('setupToken').value = state.token;
-      showStatus('setup
+      showStatus('setupStatus', 'Reconnect needed: ' + e.message, 'err');
+    }
+  }
+})();
+</script>
+</body>
+</html>
