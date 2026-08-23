@@ -85,6 +85,17 @@
     border-top: 1px solid var(--border); padding: 10px 16px calc(10px + env(safe-area-inset-bottom));
     display: flex; gap: 10px; z-index: 20;
   }
+  .toast-bottom {
+    position: fixed; left: 16px; right: 16px;
+    bottom: calc(64px + env(safe-area-inset-bottom));
+    padding: 10px 14px; border-radius: 10px; font-size: 13px; text-align: center;
+    z-index: 25; opacity: 0; pointer-events: none; transition: opacity 0.2s;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.4);
+  }
+  .toast-bottom.show { opacity: 1; }
+  .toast-bottom.ok { background: #14301f; color: #8fe3b1; }
+  .toast-bottom.err { background: #3a1a17; color: #f0a89f; }
+  .toast-bottom.busy { background: #17222d; color: #9bc4e6; }
   .status { font-size: 13px; padding: 10px 12px; border-radius: 10px; margin-bottom: 12px; display: none; }
   .status.show { display: block; }
   .status.ok { background: #14301f; color: #8fe3b1; }
@@ -197,9 +208,9 @@
     <button class="btn-secondary" onclick="disconnect()" style="margin-top:4px;">Disconnect this device</button>
   </main>
 
+  <div class="toast-bottom" id="bottomToast"></div>
   <div class="toolbar-bottom">
-    <button class="btn-secondary" style="flex:1" onclick="triggerScanNow()">Scan now</button>
-    <button class="btn-primary" style="flex:2" onclick="saveConfig()">Save changes</button>
+    <button class="btn-primary" style="flex:1" onclick="saveConfig()">Save changes</button>
   </div>
 </div>
 
@@ -227,6 +238,17 @@ function showStatus(id, msg, kind) {
   const el = document.getElementById(id);
   el.textContent = msg;
   el.className = 'status show ' + kind;
+}
+
+let toastTimer = null;
+function showToast(msg, kind, autoHideMs) {
+  const el = document.getElementById('bottomToast');
+  el.textContent = msg;
+  el.className = 'toast-bottom show ' + kind;
+  if (toastTimer) clearTimeout(toastTimer);
+  if (autoHideMs) {
+    toastTimer = setTimeout(() => { el.className = 'toast-bottom ' + kind; }, autoHideMs);
+  }
 }
 
 function ghHeaders() {
@@ -508,7 +530,7 @@ function collectFormIntoConfig() {
 
 async function saveConfig() {
   collectFormIntoConfig();
-  showStatus('topStatus', 'Saving to GitHub...', 'busy');
+  showToast('Saving to GitHub...', 'busy');
   try {
     const yamlText = jsyaml.dump(state.config, { lineWidth: 100 });
     const url = `https://api.github.com/repos/${state.owner}/${state.repo}/contents/config.yaml`;
@@ -527,28 +549,9 @@ async function saveConfig() {
     }
     const data = await resp.json();
     state.sha = data.content.sha;
-    showStatus('topStatus', 'Saved. Next scheduled run will use these settings.', 'ok');
+    showToast('Saved -- your desktop will pick this up within 5 minutes.', 'ok', 4000);
   } catch (e) {
-    showStatus('topStatus', 'Save failed: ' + e.message, 'err');
-  }
-}
-
-async function triggerScanNow() {
-  showStatus('topStatus', 'Triggering a scan...', 'busy');
-  try {
-    const url = `https://api.github.com/repos/${state.owner}/${state.repo}/actions/workflows/campwatch.yml/dispatches`;
-    const resp = await fetch(url, {
-      method: 'POST',
-      headers: ghHeaders(),
-      body: JSON.stringify({ ref: 'main' })
-    });
-    if (!resp.ok) {
-      const body = await resp.json().catch(() => ({}));
-      throw new Error(`${resp.status} ${body.message || resp.statusText}`);
-    }
-    showStatus('topStatus', 'Scan triggered -- check the Actions tab in a few seconds, or just wait for the notification.', 'ok');
-  } catch (e) {
-    showStatus('topStatus', 'Trigger failed: ' + e.message, 'err');
+    showToast('Save failed: ' + e.message, 'err', 6000);
   }
 }
 
@@ -561,10 +564,4 @@ async function triggerScanNow() {
       document.getElementById('setupOwner').value = state.owner;
       document.getElementById('setupRepo').value = state.repo;
       document.getElementById('setupToken').value = state.token;
-      showStatus('setupStatus', 'Reconnect needed: ' + e.message, 'err');
-    }
-  }
-})();
-</script>
-</body>
-</html>
+      showStatus('setup
