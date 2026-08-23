@@ -38,7 +38,7 @@ speed:
 # Polled at speed.coverage_interval_minutes.
 # ---------------------------------------------------------------------------
 coverage:
-  - name: "Sonoma Coast State Park"
+  - name: "Wright's Beach"
     facility_id: "706"        # find via `python campwatch.py lookup "Pfeiffer Big Sur"`
     start_date: "2026-11-25"
     end_date: "2027-01-30"
@@ -64,20 +64,20 @@ coverage:
 # peak windows). Use this sparingly -- it's the expensive option.
 # ---------------------------------------------------------------------------
 targeted:
-  - name: "Kirk Creek premium bluff site, Columbus Day weekend"
-    facility_id: "REPLACE_ME"
-    start_date: "2026-10-09"
-    end_date: "2026-10-12"
+  - name: "Van Damme Sp - Thanksgiving 2026"
+    facility_id: "743"
+    start_date: "2026-11-25"
+    end_date: "2026-11-27"
     keywords: ["premium", "bluff"]
     unit_ids: []                     # optional: exact unit IDs if you know them, e.g. [12345]
-    exclude_ada: false
+    exclude_ada: true
 
 # ---------------------------------------------------------------------------
 # NOTIFICATIONS -- enable any combination. All are optional/independent.
 # ---------------------------------------------------------------------------
 notifications:
   email:
-    enabled: true
+    enabled: false
     smtp_server: "smtp.gmail.com"
     smtp_port: 587
     from_address: "you@gmail.com"
@@ -90,8 +90,8 @@ notifications:
     sms_gateway_address: "5551234567@txt.att.net"   # AT&T; see README for other carriers
 
   ntfy:
-    enabled: true
-    topic: "State Parks Campsite Watcher App"
+    enabled: false
+    topic: "PLACEHOLDER"
     server: "https://ntfy.sh"
     priority: "high"
 
