@@ -64,6 +64,13 @@
   }
   .watch-item .watch-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
   .watch-item .watch-header span { font-weight: 600; font-size: 14px; }
+  .site-picker { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+  .site-chip {
+    background: #0c120f; border: 1px solid var(--border); color: var(--text);
+    border-radius: 999px; padding: 6px 12px; font-size: 13px; cursor: pointer;
+    font-family: inherit;
+  }
+  .site-chip-selected { background: var(--accent); color: #08150e; border-color: var(--accent); font-weight: 600; }
   .toolbar-bottom {
     position: fixed; bottom: 0; left: 0; right: 0; background: var(--bg);
     border-top: 1px solid var(--border); padding: 10px 16px calc(10px + env(safe-area-inset-bottom));
@@ -284,6 +291,9 @@ function renderWatchList(type) {
 function renderWatchItem(type, watch, idx) {
   const div = document.createElement('div');
   div.className = 'watch-item';
+  const unitIds = (watch.unit_ids || []).map(String);
+  const ref = state.config.site_reference && state.config.site_reference[String(watch.facility_id)];
+
   div.innerHTML = `
     <div class="watch-header">
       <span>${watch.name || 'New watch'}</span>
@@ -297,17 +307,49 @@ function renderWatchItem(type, watch, idx) {
       <div><label>Start date</label><input type="date" data-field="start_date" value="${watch.start_date || ''}"></div>
       <div><label>End date</label><input type="date" data-field="end_date" value="${watch.end_date || ''}"></div>
     </div>
-    <label>Keywords <span class="field-note" style="display:inline">(comma-separated)</span></label>
+    <label>Keywords <span class="field-note" style="display:inline">(comma-separated, ignored if specific sites are picked below)</span></label>
     <input type="text" data-field="keywords" value="${esc((watch.keywords || []).join(', '))}" placeholder="premium, hookup, bluff">
     <div class="checkbox-row">
       <input type="checkbox" data-field="exclude_ada" ${watch.exclude_ada ? 'checked' : ''}>
       <label>Exclude ADA sites</label>
+    </div>
+    <label>Specific sites <span class="field-note" style="display:inline">(optional -- tap to pick exact sites instead of matching by keyword)</span></label>
+    <div class="site-picker" data-site-picker>
+      ${renderSitePickerContents(type, idx, ref, unitIds)}
     </div>
   `;
   div.querySelectorAll('[data-field]').forEach(input => {
     input.addEventListener('change', () => updateWatchField(type, idx, input));
   });
   return div;
+}
+
+function renderSitePickerContents(type, idx, ref, selectedUnitIds) {
+  if (!ref || !ref.sites || !ref.sites.length) {
+    return `<div class="field-note">No saved site list for this facility yet. On the desktop, run:
+      <code>python campwatch.py sites &lt;facility_id&gt; --save</code> to populate this.</div>`;
+  }
+  return ref.sites.map(site => {
+    const isSelected = selectedUnitIds.includes(String(site.unit_id));
+    const adaTag = site.is_ada ? ' [ADA]' : '';
+    return `<button type="button" class="site-chip ${isSelected ? 'site-chip-selected' : ''}"
+              onclick="toggleSiteChip('${type}', ${idx}, '${esc(String(site.unit_id))}')">
+              ${esc(site.name)}${adaTag}
+            </button>`;
+  }).join('');
+}
+
+function toggleSiteChip(type, idx, unitId) {
+  const watch = state.config[type][idx];
+  const current = (watch.unit_ids || []).map(String);
+  const pos = current.indexOf(unitId);
+  if (pos >= 0) {
+    current.splice(pos, 1);
+  } else {
+    current.push(unitId);
+  }
+  watch.unit_ids = current;
+  renderWatchList(type); // refresh chip highlighting
 }
 
 function updateWatchField(type, idx, input) {
@@ -320,14 +362,14 @@ function updateWatchField(type, idx, input) {
   } else {
     watch[field] = input.value;
   }
-  if (field === 'name') renderWatchList(type); // refresh header label
+  if (field === 'name' || field === 'facility_id') renderWatchList(type); // refresh header label / site picker
 }
 
 function addWatch(type) {
   if (!state.config[type]) state.config[type] = [];
   state.config[type].push({
     name: 'New watch', facility_id: '', start_date: '', end_date: '',
-    keywords: ['premium'], exclude_ada: false
+    keywords: ['premium'], exclude_ada: false, unit_ids: []
   });
   renderWatchList(type);
 }
