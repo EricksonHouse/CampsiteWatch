@@ -52,7 +52,7 @@ coverage:
     keywords: ["premium", "bluff", "ocean"]
     exclude_ada: true
  
- - name: "Van Damme Sp 2027"
+  - name: "Van Damme Sp 2027"
     facility_id: "743"
     start_date: "2027-04-01"
     end_date: "2027-11-01"
