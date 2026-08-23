@@ -313,3 +313,24 @@ site_reference:
     - unit_id: '7411.1'
       name: 'Campsite #74'
       is_ada: false
+park_reference:
+  '718':
+    park_name: Sonoma Coast State Park
+    facilities:
+    - name: Bodega Dunes
+      facility_id: '2061'
+    - name: Wright's Beach (sites 1-27)
+      facility_id: '706'
+  '731':
+    park_name: Van Damme SP
+    facilities:
+    - name: Group Camping Area
+      facility_id: '744'
+    - name: Hike/Bike Campsite
+      facility_id: '2170'
+    - name: Little River Spur (sites 14-30)
+      facility_id: '742'
+    - name: Lower Loop (sites 1-13)
+      facility_id: '741'
+    - name: Upper Loop (sites 31-74)
+      facility_id: '743'
