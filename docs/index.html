@@ -37,8 +37,12 @@
     background: var(--card); border: 1px solid var(--border); border-radius: 14px;
     padding: 16px; margin-bottom: 14px;
   }
-  .card h2 { font-size: 15px; margin: 0 0 12px; display: flex; align-items: center; justify-content: space-between; }
+  .card h2 { font-size: 15px; margin: 0 0 12px; display: flex; align-items: center; justify-content: space-between; cursor: pointer; user-select: none; }
   .card h2 .hint { font-size: 11px; color: var(--muted); font-weight: normal; }
+  .card h2 .chevron { color: var(--muted); font-size: 20px; transform: rotate(90deg); transition: transform 0.15s; margin-left: auto; padding-left: 8px; }
+  .card.collapsed h2 { margin-bottom: 0; }
+  .card.collapsed h2 .chevron { transform: rotate(0deg); }
+  .card.collapsed .card-body { display: none; }
   label { display: block; font-size: 12px; color: var(--muted); margin: 10px 0 4px; }
   label:first-child { margin-top: 0; }
   input[type=text], input[type=number], input[type=time], input[type=date], select, textarea {
@@ -62,8 +66,13 @@
   .watch-item {
     border: 1px solid var(--border); border-radius: 10px; padding: 12px; margin-bottom: 10px; background: #0c120f;
   }
-  .watch-item .watch-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
-  .watch-item .watch-header span { font-weight: 600; font-size: 14px; }
+  .watch-item .watch-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; cursor: pointer; user-select: none; }
+  .watch-item .watch-header span:first-child { font-weight: 600; font-size: 14px; display: flex; flex-direction: column; gap: 2px; }
+  .watch-item .watch-summary { font-weight: normal; font-size: 12px; color: var(--muted); }
+  .watch-item .watch-header .chevron { color: var(--muted); font-size: 20px; transform: rotate(90deg); transition: transform 0.15s; }
+  .watch-item:not(.expanded) .watch-header .chevron { transform: rotate(0deg); }
+  .watch-item:not(.expanded) .watch-header { margin-bottom: 0; }
+  .watch-item:not(.expanded) .watch-body { display: none; }
   .site-picker { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
   .site-chip {
     background: #0c120f; border: 1px solid var(--border); color: var(--text);
@@ -120,59 +129,69 @@
   <main>
     <div id="topStatus" class="status"></div>
 
-    <div class="card">
-      <h2>Active hours <span class="hint">when alerts are sent</span></h2>
-      <div class="row">
-        <div><label>From</label><input type="time" id="activeStart"></div>
-        <div><label>To</label><input type="time" id="activeEnd"></div>
+    <div class="card collapsed" data-card="activeHours">
+      <h2 onclick="toggleCard('activeHours')">Active hours <span class="hint">when alerts are sent</span> <span class="chevron">&rsaquo;</span></h2>
+      <div class="card-body">
+        <div class="row">
+          <div><label>From</label><input type="time" id="activeStart"></div>
+          <div><label>To</label><input type="time" id="activeEnd"></div>
+        </div>
+        <label>Timezone</label>
+        <select id="timezone">
+          <option value="America/Los_Angeles">Pacific (California)</option>
+          <option value="America/Denver">Mountain</option>
+          <option value="America/Chicago">Central</option>
+          <option value="America/New_York">Eastern</option>
+        </select>
       </div>
-      <label>Timezone</label>
-      <select id="timezone">
-        <option value="America/Los_Angeles">Pacific (California)</option>
-        <option value="America/Denver">Mountain</option>
-        <option value="America/Chicago">Central</option>
-        <option value="America/New_York">Eastern</option>
-      </select>
     </div>
 
-    <div class="card">
-      <h2>Scan speed</h2>
-      <label>Coverage watches -- check every (minutes)</label>
-      <input type="number" id="coverageInterval" min="5">
-      <label>Targeted watches -- check every (minutes)</label>
-      <input type="number" id="targetedInterval" min="1">
-      <div class="checkbox-row">
-        <input type="checkbox" id="peakEnabled">
-        <label for="peakEnabled">Speed boost during peak hours</label>
+    <div class="card collapsed" data-card="scanSpeed">
+      <h2 onclick="toggleCard('scanSpeed')">Scan speed <span class="chevron">&rsaquo;</span></h2>
+      <div class="card-body">
+        <label>Coverage watches -- check every (minutes)</label>
+        <input type="number" id="coverageInterval" min="5">
+        <label>Targeted watches -- check every (minutes)</label>
+        <input type="number" id="targetedInterval" min="1">
+        <div class="checkbox-row">
+          <input type="checkbox" id="peakEnabled">
+          <label for="peakEnabled">Speed boost during peak hours</label>
+        </div>
+        <div class="row">
+          <div><label>Peak from</label><input type="time" id="peakStart"></div>
+          <div><label>Peak to</label><input type="time" id="peakEnd"></div>
+        </div>
+        <label>During peak, targeted watches check every (minutes)</label>
+        <input type="number" id="peakInterval" min="1">
       </div>
-      <div class="row">
-        <div><label>Peak from</label><input type="time" id="peakStart"></div>
-        <div><label>Peak to</label><input type="time" id="peakEnd"></div>
+    </div>
+
+    <div class="card" data-card="coverage">
+      <h2 onclick="toggleCard('coverage')">Coverage watches <span class="hint">broad, multiple parks</span> <span class="chevron">&rsaquo;</span></h2>
+      <div class="card-body">
+        <div id="coverageList"></div>
+        <button class="btn-small" onclick="addWatch('coverage')">+ Add coverage watch</button>
       </div>
-      <label>During peak, targeted watches check every (minutes)</label>
-      <input type="number" id="peakInterval" min="1">
     </div>
 
-    <div class="card">
-      <h2>Coverage watches <span class="hint">broad, multiple parks</span></h2>
-      <div id="coverageList"></div>
-      <button class="btn-small" onclick="addWatch('coverage')">+ Add coverage watch</button>
+    <div class="card" data-card="targeted">
+      <h2 onclick="toggleCard('targeted')">Targeted watches <span class="hint">one specific trip, checked faster</span> <span class="chevron">&rsaquo;</span></h2>
+      <div class="card-body">
+        <div id="targetedList"></div>
+        <button class="btn-small" onclick="addWatch('targeted')">+ Add targeted watch</button>
+      </div>
     </div>
 
-    <div class="card">
-      <h2>Targeted watches <span class="hint">one specific trip, checked faster</span></h2>
-      <div id="targetedList"></div>
-      <button class="btn-small" onclick="addWatch('targeted')">+ Add targeted watch</button>
-    </div>
-
-    <div class="card">
-      <h2>Notifications</h2>
-      <div class="checkbox-row"><input type="checkbox" id="notifyEmail"><label for="notifyEmail">Email</label></div>
-      <div class="checkbox-row"><input type="checkbox" id="notifySms"><label for="notifySms">SMS</label></div>
-      <div class="checkbox-row"><input type="checkbox" id="notifyNtfy"><label for="notifyNtfy">Push (ntfy)</label></div>
-      <div class="field-note">Credentials (passwords, topic names) are managed as GitHub
-        Secrets, not here -- that's a one-time setup, not something you'll change often.
-        This just turns each channel on/off.</div>
+    <div class="card collapsed" data-card="notifications">
+      <h2 onclick="toggleCard('notifications')">Notifications <span class="chevron">&rsaquo;</span></h2>
+      <div class="card-body">
+        <div class="checkbox-row"><input type="checkbox" id="notifyEmail"><label for="notifyEmail">Email</label></div>
+        <div class="checkbox-row"><input type="checkbox" id="notifySms"><label for="notifySms">SMS</label></div>
+        <div class="checkbox-row"><input type="checkbox" id="notifyNtfy"><label for="notifyNtfy">Push (ntfy)</label></div>
+        <div class="field-note">Credentials (passwords, topic names) are managed as GitHub
+          Secrets, not here -- that's a one-time setup, not something you'll change often.
+          This just turns each channel on/off.</div>
+      </div>
     </div>
 
     <button class="btn-secondary" onclick="disconnect()" style="margin-top:4px;">Disconnect this device</button>
@@ -187,6 +206,8 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/js-yaml/4.1.0/js-yaml.min.js"></script>
 <script>
 let state = { owner: '', repo: '', token: '', sha: '', config: null };
+const parkSelectionByWatch = {}; // UI-only, never saved: `${type}:${idx}` -> selected place_id
+const expandedWatches = {}; // UI-only, never saved: `${type}:${idx}` -> true if expanded
 
 function loadConnection() {
   const raw = localStorage.getItem('campwatch_conn');
@@ -259,6 +280,11 @@ function enterApp() {
   populateForm();
 }
 
+function toggleCard(name) {
+  const card = document.querySelector(`[data-card="${name}"]`);
+  card.classList.toggle('collapsed');
+}
+
 function populateForm() {
   const c = state.config;
   document.getElementById('activeStart').value = c.schedule.active_hours[0].start;
@@ -290,19 +316,65 @@ function renderWatchList(type) {
 
 function renderWatchItem(type, watch, idx) {
   const div = document.createElement('div');
-  div.className = 'watch-item';
+  const watchKey = `${type}:${idx}`;
+  const isExpanded = !!expandedWatches[watchKey];
+  div.className = 'watch-item' + (isExpanded ? ' expanded' : '');
   const unitIds = (watch.unit_ids || []).map(String);
-  const ref = state.config.site_reference && state.config.site_reference[String(watch.facility_id)];
+  const siteRef = state.config.site_reference && state.config.site_reference[String(watch.facility_id)];
+  const parkRef = state.config.park_reference || {};
+  const hasParkLibrary = Object.keys(parkRef).length > 0;
+
+  // Figure out which park is selected: prefer the transient UI selection
+  // (set when the user just picked a park but hasn't picked a facility yet),
+  // falling back to reverse-matching the watch's current facility_id.
+  let selectedPlaceId = parkSelectionByWatch[watchKey] || '';
+  if (!selectedPlaceId && watch.facility_id) {
+    for (const [placeId, park] of Object.entries(parkRef)) {
+      if ((park.facilities || []).some(f => String(f.facility_id) === String(watch.facility_id))) {
+        selectedPlaceId = placeId;
+        break;
+      }
+    }
+  }
+
+  const siteCount = unitIds.length;
+  const summary = siteCount ? `${siteCount} site${siteCount > 1 ? 's' : ''} picked`
+                             : (watch.keywords || []).join(', ') || 'no filter set';
 
   div.innerHTML = `
-    <div class="watch-header">
-      <span>${watch.name || 'New watch'}</span>
-      <button class="btn-danger" onclick="removeWatch('${type}', ${idx})">Remove</button>
+    <div class="watch-header" onclick="toggleWatchExpanded('${type}', ${idx})">
+      <span>${esc(watch.name || 'New watch')}<span class="watch-summary">${esc(summary)}</span></span>
+      <span class="chevron">&rsaquo;</span>
     </div>
+    <div class="watch-body">
+    <button class="btn-danger" onclick="event.stopPropagation(); removeWatch('${type}', ${idx})" style="margin-bottom:10px;">Remove this watch</button>
     <label>Name</label>
     <input type="text" data-field="name" value="${esc(watch.name || '')}" placeholder="e.g. Pfeiffer Big Sur SP">
-    <label>Facility ID <span class="field-note" style="display:inline">(from the lookup command)</span></label>
-    <input type="text" data-field="facility_id" value="${esc(watch.facility_id || '')}">
+
+    ${hasParkLibrary ? `
+      <label>State park</label>
+      <select data-field="_park_select" onchange="onParkSelected('${type}', ${idx}, this.value)">
+        <option value="">-- choose a park --</option>
+        ${Object.entries(parkRef).map(([placeId, park]) => `
+          <option value="${esc(placeId)}" ${placeId === selectedPlaceId ? 'selected' : ''}>${esc(park.park_name)}</option>
+        `).join('')}
+      </select>
+      <label>Facility (campground)</label>
+      <select data-field="facility_id" onchange="updateWatchField('${type}', ${idx}, this)">
+        <option value="">-- choose a facility --</option>
+        ${selectedPlaceId ? (parkRef[selectedPlaceId].facilities || []).map(f => `
+          <option value="${esc(f.facility_id)}" ${String(f.facility_id) === String(watch.facility_id) ? 'selected' : ''}>${esc(f.name)}</option>
+        `).join('') : ''}
+      </select>
+      <div class="field-note">Don't see the park you want? On the desktop, run:
+        <code>python campwatch.py lookup "park name" --save</code> to add it here.</div>
+    ` : `
+      <label>Facility ID <span class="field-note" style="display:inline">(from the lookup command)</span></label>
+      <input type="text" data-field="facility_id" value="${esc(watch.facility_id || '')}">
+      <div class="field-note">Tip: run <code>python campwatch.py lookup "park name" --save</code> on the
+        desktop to replace this with a proper park/facility dropdown.</div>
+    `}
+
     <div class="row">
       <div><label>Start date</label><input type="date" data-field="start_date" value="${watch.start_date || ''}"></div>
       <div><label>End date</label><input type="date" data-field="end_date" value="${watch.end_date || ''}"></div>
@@ -315,7 +387,8 @@ function renderWatchItem(type, watch, idx) {
     </div>
     <label>Specific sites <span class="field-note" style="display:inline">(optional -- tap to pick exact sites instead of matching by keyword)</span></label>
     <div class="site-picker" data-site-picker>
-      ${renderSitePickerContents(type, idx, ref, unitIds)}
+      ${renderSitePickerContents(type, idx, siteRef, unitIds)}
+    </div>
     </div>
   `;
   div.querySelectorAll('[data-field]').forEach(input => {
@@ -337,6 +410,19 @@ function renderSitePickerContents(type, idx, ref, selectedUnitIds) {
               ${esc(site.name)}${adaTag}
             </button>`;
   }).join('');
+}
+
+function onParkSelected(type, idx, placeId) {
+  // Selecting a park doesn't set facility_id itself -- it just needs to
+  // re-render so the facility dropdown populates with that park's options.
+  // Track the choice in transient UI state (never written to config.yaml),
+  // and clear the old facility_id/unit_ids since they belonged to whatever
+  // was selected before, and wouldn't make sense under the new park.
+  parkSelectionByWatch[`${type}:${idx}`] = placeId;
+  const watch = state.config[type][idx];
+  watch.facility_id = '';
+  watch.unit_ids = [];
+  renderWatchList(type);
 }
 
 function toggleSiteChip(type, idx, unitId) {
@@ -365,17 +451,31 @@ function updateWatchField(type, idx, input) {
   if (field === 'name' || field === 'facility_id') renderWatchList(type); // refresh header label / site picker
 }
 
+function toggleWatchExpanded(type, idx) {
+  const key = `${type}:${idx}`;
+  expandedWatches[key] = !expandedWatches[key];
+  renderWatchList(type);
+}
+
 function addWatch(type) {
   if (!state.config[type]) state.config[type] = [];
   state.config[type].push({
     name: 'New watch', facility_id: '', start_date: '', end_date: '',
     keywords: ['premium'], exclude_ada: false, unit_ids: []
   });
+  // Auto-expand the one you just added -- collapsing it immediately after
+  // tapping "+ Add" would be a bad first impression.
+  expandedWatches[`${type}:${state.config[type].length - 1}`] = true;
   renderWatchList(type);
 }
 
 function removeWatch(type, idx) {
   state.config[type].splice(idx, 1);
+  // Indices shift after a removal, so any transient per-index state (park
+  // selection, expand/collapse) would now point at the wrong watch --
+  // clearing both is simpler and safer than trying to renumber them.
+  Object.keys(parkSelectionByWatch).forEach(k => delete parkSelectionByWatch[k]);
+  Object.keys(expandedWatches).forEach(k => delete expandedWatches[k]);
   renderWatchList(type);
 }
 
