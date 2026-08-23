@@ -1,1 +1,48 @@
+name: campwatch
 
+on:
+  schedule:
+    # Every 5 minutes. GitHub's scheduler is best-effort and can slip a few
+    # minutes under load -- fine for coverage watches, worth knowing for
+    # targeted/peak watches. Cron minimum supported interval is 5 minutes.
+    - cron: "*/5 * * * *"
+  workflow_dispatch: {}   # adds a manual "Run workflow" button for testing
+
+# Prevents two runs from overlapping and racing to commit state
+concurrency:
+  group: campwatch
+  cancel-in-progress: false
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: write   # needed to commit the updated state file back
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run campwatch (single pass)
+        env:
+          CAMPWATCH_EMAIL_PASSWORD: ${{ secrets.CAMPWATCH_EMAIL_PASSWORD }}
+          CAMPWATCH_EMAIL_FROM: ${{ secrets.CAMPWATCH_EMAIL_FROM }}
+          CAMPWATCH_EMAIL_TO: ${{ secrets.CAMPWATCH_EMAIL_TO }}
+          CAMPWATCH_SMTP_SERVER: ${{ secrets.CAMPWATCH_SMTP_SERVER }}
+          CAMPWATCH_NTFY_TOPIC: ${{ secrets.CAMPWATCH_NTFY_TOPIC }}
+          CAMPWATCH_SMS_GATEWAY: ${{ secrets.CAMPWATCH_SMS_GATEWAY }}
+        run: python campwatch.py run-once --config config.yaml
+
+      - name: Commit updated state (if changed)
+        run: |
+          git config user.name "campwatch-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add campwatch_state.json campwatch.log
+          git diff --cached --quiet || git commit -m "campwatch: update state"
+          git push
