@@ -1,8 +1,0 @@
-{
-  "name": "campwatch",
-  "short_name": "campwatch",
-  "start_url": "./index.html",
-  "display": "standalone",
-  "background_color": "#0f1512",
-  "theme_color": "#0f1512"
-}
