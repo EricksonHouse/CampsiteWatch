@@ -66,6 +66,14 @@ targeted:
     unit_ids:
       - '195.1'
     exclude_ada: true
+  - name: Wrights Beach Thanksgiving 2026
+    facility_id: '706'
+    start_date: '2026-11-25'
+    end_date: '2026-11-28'
+    keywords:
+      - premium
+    unit_ids: []
+    _park_select: '718'
 notifications:
   email:
     enabled: false
