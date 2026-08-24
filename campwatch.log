@@ -743,3 +743,28 @@
 <H1>403 ERROR</H1>
 <H2>The request could 
 2026-08-24 21:59:19,650	INFO	campwatch	No new availability this cycle.
+2026-08-24 22:31:06,353	ERROR	campwatch	Watch 'Wright's Beach 2026' failed: POST https://california-rdr.prod.cali.rd12.recreation-management.tylerapp.com/rdr/search/grid -> 403: <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<HTML><HEAD><META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=iso-8859-1">
+<TITLE>ERROR: The request could not be satisfied</TITLE>
+</HEAD><BODY>
+<H1>403 ERROR</H1>
+<H2>The request could 
+2026-08-24 22:31:09,126	ERROR	campwatch	Watch 'Van Damme Sp 2027' failed: POST https://california-rdr.prod.cali.rd12.recreation-management.tylerapp.com/rdr/search/grid -> 403: <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<HTML><HEAD><META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=iso-8859-1">
+<TITLE>ERROR: The request could not be satisfied</TITLE>
+</HEAD><BODY>
+<H1>403 ERROR</H1>
+<H2>The request could 
+2026-08-24 22:31:11,843	ERROR	campwatch	Watch 'Wrights Beach Site #PRM - TDay 2026' failed: POST https://california-rdr.prod.cali.rd12.recreation-management.tylerapp.com/rdr/search/grid -> 403: <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<HTML><HEAD><META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=iso-8859-1">
+<TITLE>ERROR: The request could not be satisfied</TITLE>
+</HEAD><BODY>
+<H1>403 ERROR</H1>
+<H2>The request could 
+2026-08-24 22:31:14,442	ERROR	campwatch	Watch 'Wrights Beach Site# PRM+ Xmas 2026' failed: POST https://california-rdr.prod.cali.rd12.recreation-management.tylerapp.com/rdr/search/grid -> 403: <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<HTML><HEAD><META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=iso-8859-1">
+<TITLE>ERROR: The request could not be satisfied</TITLE>
+</HEAD><BODY>
+<H1>403 ERROR</H1>
+<H2>The request could 
+2026-08-24 22:31:15,944	INFO	campwatch	No new availability this cycle.
