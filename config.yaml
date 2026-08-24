@@ -103,7 +103,7 @@ notifications:
     email: {}
     sms_gateway_address: 5551234567@txt.att.net
   ntfy:
-    enabled: false
+    enabled: true
     topic: PLACEHOLDER
     server: https://ntfy.sh
     priority: high
