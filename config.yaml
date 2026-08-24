@@ -37,15 +37,6 @@ coverage:
       - '1967.1'
       - '2805.1'
       - '2921.1'
-  - name: Van Damme Sp 2026
-    facility_id: '741'
-    start_date: '2026-11-24'
-    end_date: '2026-11-30'
-    keywords:
-      - premium
-      - bluff
-      - ocean
-    exclude_ada: true
   - name: Van Damme Sp 2027
     facility_id: '743'
     start_date: '2027-04-01'
@@ -84,11 +75,11 @@ targeted:
       - '2091.1'
       - '2214.1'
       - '2337.1'
-      - '2457.1'
       - '2575.1'
       - '2691.1'
       - '2805.1'
       - '1967.1'
+      - '2921.1'
     _park_select: '718'
 notifications:
   email:
