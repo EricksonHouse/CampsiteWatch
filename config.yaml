@@ -47,16 +47,6 @@ coverage:
       - ocean
     exclude_ada: true
 targeted:
-  - name: 'Van Damme Site #1 - TDay ‘26'
-    facility_id: '741'
-    start_date: '2026-11-25'
-    end_date: '2026-11-27'
-    keywords:
-      - premium
-      - bluff
-    unit_ids:
-      - '195.1'
-    exclude_ada: true
   - name: 'Wrights Beach Site #PRM - TDay ‘26'
     facility_id: '706'
     start_date: '2026-11-25'
