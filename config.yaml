@@ -1,8 +1,8 @@
 schedule:
   timezone: America/Los_Angeles
   active_hours:
-  - start: 06:30
-    end: '22:30'
+    - start: '06:30'
+      end: '22:30'
   skip_days: []
 speed:
   coverage_interval_minutes: 15
@@ -11,91 +11,91 @@ speed:
     enabled: true
     interval_minutes: 1
     windows:
-    - start: '17:00'
-      end: '21:00'
+      - start: '17:00'
+        end: '21:00'
   min_request_gap_seconds: 1.5
 coverage:
-- name: Wright's Beach 2026
-  facility_id: '706'
-  start_date: '2026-11-25'
-  end_date: '2027-01-30'
-  keywords:
-  - premium
-  - hookup
-  - river
-  - ada
-  exclude_ada: true
-  unit_ids:
-  - '459.1'
-  - '862.1'
-  - '1039.1'
-  - '1203.1'
-  - '1366.1'
-  - '1522.1'
-  - '1679.1'
-  - '1822.1'
-  - '1967.1'
-  - '2805.1'
-  - '2921.1'
-- name: Van Damme Sp 2027
-  facility_id: '743'
-  start_date: '2027-04-01'
-  end_date: '2027-11-01'
-  keywords:
-  - premium
-  - bluff
-  - ocean
-  exclude_ada: true
+  - name: Wright's Beach 2026
+    facility_id: '706'
+    start_date: '2026-11-25'
+    end_date: '2027-01-30'
+    keywords:
+      - premium
+      - hookup
+      - river
+      - ada
+    exclude_ada: true
+    unit_ids:
+      - '459.1'
+      - '862.1'
+      - '1039.1'
+      - '1203.1'
+      - '1366.1'
+      - '1522.1'
+      - '1679.1'
+      - '1822.1'
+      - '1967.1'
+      - '2805.1'
+      - '2921.1'
+  - name: Van Damme Sp 2027
+    facility_id: '743'
+    start_date: '2027-04-01'
+    end_date: '2027-11-01'
+    keywords:
+      - premium
+      - bluff
+      - ocean
+    exclude_ada: true
 targeted:
-- name: 'Wrights Beach Site #PRM - TDay 2026'
-  facility_id: '706'
-  start_date: '2026-11-25'
-  end_date: '2026-11-28'
-  keywords:
-  - premium
-  unit_ids:
-  - '459.1'
-  - '862.1'
-  - '1039.1'
-  - '1203.1'
-  - '1366.1'
-  - '1522.1'
-  - '1679.1'
-  - '1822.1'
-  - '2091.1'
-  - '2214.1'
-  - '2337.1'
-  - '2575.1'
-  - '2691.1'
-  - '2805.1'
-  - '1967.1'
-  - '2921.1'
-  _park_select: '718'
-- name: "Wrights Beach Site# PRM+ Xmas \u201826"
-  facility_id: '706'
-  start_date: '2026-12-26'
-  end_date: '2026-12-30'
-  keywords:
-  - premium
-  unit_ids:
-  - '459.1'
-  - '862.1'
-  - '1039.1'
-  - '1203.1'
-  - '1366.1'
-  - '1522.1'
-  - '1679.1'
-  - '1822.1'
-  - '1967.1'
-  - '2337.1'
-  - '2214.1'
-  - '2091.1'
-  - '2575.1'
-  - '2691.1'
-  - '2805.1'
-  - '2921.1'
-  - '2457.1'
-  _park_select: '718'
+  - name: 'Wrights Beach Site #PRM - TDay 2026'
+    facility_id: '706'
+    start_date: '2026-11-25'
+    end_date: '2026-11-28'
+    keywords:
+      - premium
+    unit_ids:
+      - '459.1'
+      - '862.1'
+      - '1039.1'
+      - '1203.1'
+      - '1366.1'
+      - '1522.1'
+      - '1679.1'
+      - '1822.1'
+      - '2091.1'
+      - '2214.1'
+      - '2337.1'
+      - '2575.1'
+      - '2691.1'
+      - '2805.1'
+      - '1967.1'
+      - '2921.1'
+    _park_select: '718'
+  - name: Wrights Beach Site# PRM+ Xmas 2026
+    facility_id: '706'
+    start_date: '2026-12-26'
+    end_date: '2026-12-30'
+    keywords:
+      - premium
+    unit_ids:
+      - '459.1'
+      - '862.1'
+      - '1039.1'
+      - '1203.1'
+      - '1366.1'
+      - '1522.1'
+      - '1679.1'
+      - '1822.1'
+      - '1967.1'
+      - '2337.1'
+      - '2214.1'
+      - '2091.1'
+      - '2575.1'
+      - '2691.1'
+      - '2805.1'
+      - '2921.1'
+      - '2457.1'
+    _park_select: '718'
 notifications:
   email:
     enabled: false
@@ -119,264 +119,264 @@ site_reference:
   '706':
     facility_name: Wright's Beach (sites 1-27)
     sites:
-    - unit_id: '2091.1'
-      name: 'Campsite #WB11'
-      is_ada: false
-    - unit_id: '2214.1'
-      name: 'Campsite #WB12'
-      is_ada: false
-    - unit_id: '2337.1'
-      name: 'Campsite #WB13'
-      is_ada: false
-    - unit_id: '2457.1'
-      name: 'Campsite #WB14'
-      is_ada: false
-    - unit_id: '2575.1'
-      name: 'Campsite #WB15'
-      is_ada: false
-    - unit_id: '2691.1'
-      name: 'Campsite #WB16'
-      is_ada: false
-    - unit_id: '2805.1'
-      name: 'Campsite #WB17'
-      is_ada: false
-    - unit_id: '2921.1'
-      name: 'Campsite #WB18'
-      is_ada: false
-    - unit_id: '3038.1'
-      name: 'Campsite #WB19'
-      is_ada: false
-    - unit_id: '3150.1'
-      name: 'Campsite #WB20'
-      is_ada: false
-    - unit_id: '3261.1'
-      name: 'Campsite #WB21'
-      is_ada: false
-    - unit_id: '3371.1'
-      name: 'Campsite #WB22'
-      is_ada: false
-    - unit_id: '3480.1'
-      name: 'Campsite #WB23'
-      is_ada: false
-    - unit_id: '3585.1'
-      name: 'Campsite #WB24'
-      is_ada: false
-    - unit_id: '3690.1'
-      name: 'Campsite #WB25'
-      is_ada: false
-    - unit_id: '459.1'
-      name: 'Premium Campsite #WB01'
-      is_ada: false
-    - unit_id: '862.1'
-      name: 'Premium Campsite #WB03'
-      is_ada: false
-    - unit_id: '1039.1'
-      name: 'Premium Campsite #WB04'
-      is_ada: false
-    - unit_id: '1203.1'
-      name: 'Premium Campsite #WB05'
-      is_ada: false
-    - unit_id: '1366.1'
-      name: 'Premium Campsite #WB06'
-      is_ada: false
-    - unit_id: '1522.1'
-      name: 'Premium Campsite #WB07'
-      is_ada: false
-    - unit_id: '1679.1'
-      name: 'Premium Campsite #WB08'
-      is_ada: false
-    - unit_id: '1822.1'
-      name: 'Premium Campsite #WB09'
-      is_ada: false
-    - unit_id: '1967.1'
-      name: 'Premium Campsite #WB10'
-      is_ada: false
+      - unit_id: '2091.1'
+        name: 'Campsite #WB11'
+        is_ada: false
+      - unit_id: '2214.1'
+        name: 'Campsite #WB12'
+        is_ada: false
+      - unit_id: '2337.1'
+        name: 'Campsite #WB13'
+        is_ada: false
+      - unit_id: '2457.1'
+        name: 'Campsite #WB14'
+        is_ada: false
+      - unit_id: '2575.1'
+        name: 'Campsite #WB15'
+        is_ada: false
+      - unit_id: '2691.1'
+        name: 'Campsite #WB16'
+        is_ada: false
+      - unit_id: '2805.1'
+        name: 'Campsite #WB17'
+        is_ada: false
+      - unit_id: '2921.1'
+        name: 'Campsite #WB18'
+        is_ada: false
+      - unit_id: '3038.1'
+        name: 'Campsite #WB19'
+        is_ada: false
+      - unit_id: '3150.1'
+        name: 'Campsite #WB20'
+        is_ada: false
+      - unit_id: '3261.1'
+        name: 'Campsite #WB21'
+        is_ada: false
+      - unit_id: '3371.1'
+        name: 'Campsite #WB22'
+        is_ada: false
+      - unit_id: '3480.1'
+        name: 'Campsite #WB23'
+        is_ada: false
+      - unit_id: '3585.1'
+        name: 'Campsite #WB24'
+        is_ada: false
+      - unit_id: '3690.1'
+        name: 'Campsite #WB25'
+        is_ada: false
+      - unit_id: '459.1'
+        name: 'Premium Campsite #WB01'
+        is_ada: false
+      - unit_id: '862.1'
+        name: 'Premium Campsite #WB03'
+        is_ada: false
+      - unit_id: '1039.1'
+        name: 'Premium Campsite #WB04'
+        is_ada: false
+      - unit_id: '1203.1'
+        name: 'Premium Campsite #WB05'
+        is_ada: false
+      - unit_id: '1366.1'
+        name: 'Premium Campsite #WB06'
+        is_ada: false
+      - unit_id: '1522.1'
+        name: 'Premium Campsite #WB07'
+        is_ada: false
+      - unit_id: '1679.1'
+        name: 'Premium Campsite #WB08'
+        is_ada: false
+      - unit_id: '1822.1'
+        name: 'Premium Campsite #WB09'
+        is_ada: false
+      - unit_id: '1967.1'
+        name: 'Premium Campsite #WB10'
+        is_ada: false
   '741':
     facility_name: Lower Loop (sites 1-13)
     sites:
-    - unit_id: '195.1'
-      name: 'Campsite #1'
-      is_ada: false
-    - unit_id: '1862.1'
-      name: 'Campsite #10'
-      is_ada: false
-    - unit_id: '1986.1'
-      name: 'Campsite #11'
-      is_ada: false
-    - unit_id: '2107.1'
-      name: 'Campsite #12'
-      is_ada: false
-    - unit_id: '2250.1'
-      name: 'Campsite #13'
-      is_ada: false
-    - unit_id: '465.1'
-      name: 'Campsite #2'
-      is_ada: false
-    - unit_id: '720.1'
-      name: 'Campsite #3'
-      is_ada: false
-    - unit_id: '867.1'
-      name: 'Campsite #4'
-      is_ada: false
-    - unit_id: '1078.1'
-      name: 'Campsite #5'
-      is_ada: false
-    - unit_id: '1244.1'
-      name: 'Campsite #6'
-      is_ada: false
-    - unit_id: '1405.1'
-      name: 'Campsite #7'
-      is_ada: false
-    - unit_id: '1558.1'
-      name: 'Campsite #8'
-      is_ada: false
-    - unit_id: '1719.1'
-      name: 'Campsite #9'
-      is_ada: false
+      - unit_id: '195.1'
+        name: 'Campsite #1'
+        is_ada: false
+      - unit_id: '1862.1'
+        name: 'Campsite #10'
+        is_ada: false
+      - unit_id: '1986.1'
+        name: 'Campsite #11'
+        is_ada: false
+      - unit_id: '2107.1'
+        name: 'Campsite #12'
+        is_ada: false
+      - unit_id: '2250.1'
+        name: 'Campsite #13'
+        is_ada: false
+      - unit_id: '465.1'
+        name: 'Campsite #2'
+        is_ada: false
+      - unit_id: '720.1'
+        name: 'Campsite #3'
+        is_ada: false
+      - unit_id: '867.1'
+        name: 'Campsite #4'
+        is_ada: false
+      - unit_id: '1078.1'
+        name: 'Campsite #5'
+        is_ada: false
+      - unit_id: '1244.1'
+        name: 'Campsite #6'
+        is_ada: false
+      - unit_id: '1405.1'
+        name: 'Campsite #7'
+        is_ada: false
+      - unit_id: '1558.1'
+        name: 'Campsite #8'
+        is_ada: false
+      - unit_id: '1719.1'
+        name: 'Campsite #9'
+        is_ada: false
   '743':
     facility_name: Upper Loop (sites 31-74)
     sites:
-    - unit_id: '4195.1'
-      name: 'Campsite #31'
-      is_ada: false
-    - unit_id: '4288.1'
-      name: 'Campsite #32'
-      is_ada: false
-    - unit_id: '4386.1'
-      name: 'Campsite #33'
-      is_ada: false
-    - unit_id: '4657.1'
-      name: 'Campsite #36'
-      is_ada: false
-    - unit_id: '4755.1'
-      name: 'Campsite #37'
-      is_ada: false
-    - unit_id: '4844.1'
-      name: 'Campsite #38'
-      is_ada: false
-    - unit_id: '4921.1'
-      name: 'Campsite #39'
-      is_ada: false
-    - unit_id: '5006.1'
-      name: 'Campsite #40'
-      is_ada: false
-    - unit_id: '5095.1'
-      name: 'Campsite #41'
-      is_ada: false
-    - unit_id: '5174.1'
-      name: 'Campsite #42'
-      is_ada: false
-    - unit_id: '5251.1'
-      name: 'Campsite #43'
-      is_ada: false
-    - unit_id: '5337.1'
-      name: 'Campsite #44'
-      is_ada: false
-    - unit_id: '5417.1'
-      name: 'Campsite #45'
-      is_ada: false
-    - unit_id: '5501.1'
-      name: 'Campsite #46'
-      is_ada: false
-    - unit_id: '5652.1'
-      name: 'Campsite #48'
-      is_ada: false
-    - unit_id: '5730.1'
-      name: 'Campsite #49'
-      is_ada: false
-    - unit_id: '5808.1'
-      name: 'Campsite #50'
-      is_ada: false
-    - unit_id: '5887.1'
-      name: 'Campsite #51'
-      is_ada: false
-    - unit_id: '5962.1'
-      name: 'Campsite #52'
-      is_ada: false
-    - unit_id: '6046.1'
-      name: 'Campsite #53'
-      is_ada: false
-    - unit_id: '6133.1'
-      name: 'Campsite #54'
-      is_ada: false
-    - unit_id: '6197.1'
-      name: 'Campsite #55'
-      is_ada: false
-    - unit_id: '6279.1'
-      name: 'Campsite #56'
-      is_ada: false
-    - unit_id: '6359.1'
-      name: 'Campsite #57'
-      is_ada: false
-    - unit_id: '6423.1'
-      name: 'Campsite #58'
-      is_ada: false
-    - unit_id: '6497.1'
-      name: 'Campsite #59'
-      is_ada: false
-    - unit_id: '6566.1'
-      name: 'Campsite #60'
-      is_ada: false
-    - unit_id: '6631.1'
-      name: 'Campsite #61'
-      is_ada: false
-    - unit_id: '6705.1'
-      name: 'Campsite #62'
-      is_ada: false
-    - unit_id: '6759.1'
-      name: 'Campsite #63'
-      is_ada: false
-    - unit_id: '6828.1'
-      name: 'Campsite #64'
-      is_ada: false
-    - unit_id: '6889.1'
-      name: 'Campsite #65'
-      is_ada: false
-    - unit_id: '6950.1'
-      name: 'Campsite #66'
-      is_ada: false
-    - unit_id: '7009.1'
-      name: 'Campsite #67'
-      is_ada: false
-    - unit_id: '7067.1'
-      name: 'Campsite #68'
-      is_ada: false
-    - unit_id: '7124.1'
-      name: 'Campsite #69'
-      is_ada: false
-    - unit_id: '7244.1'
-      name: 'Campsite #71'
-      is_ada: false
-    - unit_id: '7299.1'
-      name: 'Campsite #72'
-      is_ada: false
-    - unit_id: '7343.1'
-      name: 'Campsite #73'
-      is_ada: false
-    - unit_id: '7411.1'
-      name: 'Campsite #74'
-      is_ada: false
+      - unit_id: '4195.1'
+        name: 'Campsite #31'
+        is_ada: false
+      - unit_id: '4288.1'
+        name: 'Campsite #32'
+        is_ada: false
+      - unit_id: '4386.1'
+        name: 'Campsite #33'
+        is_ada: false
+      - unit_id: '4657.1'
+        name: 'Campsite #36'
+        is_ada: false
+      - unit_id: '4755.1'
+        name: 'Campsite #37'
+        is_ada: false
+      - unit_id: '4844.1'
+        name: 'Campsite #38'
+        is_ada: false
+      - unit_id: '4921.1'
+        name: 'Campsite #39'
+        is_ada: false
+      - unit_id: '5006.1'
+        name: 'Campsite #40'
+        is_ada: false
+      - unit_id: '5095.1'
+        name: 'Campsite #41'
+        is_ada: false
+      - unit_id: '5174.1'
+        name: 'Campsite #42'
+        is_ada: false
+      - unit_id: '5251.1'
+        name: 'Campsite #43'
+        is_ada: false
+      - unit_id: '5337.1'
+        name: 'Campsite #44'
+        is_ada: false
+      - unit_id: '5417.1'
+        name: 'Campsite #45'
+        is_ada: false
+      - unit_id: '5501.1'
+        name: 'Campsite #46'
+        is_ada: false
+      - unit_id: '5652.1'
+        name: 'Campsite #48'
+        is_ada: false
+      - unit_id: '5730.1'
+        name: 'Campsite #49'
+        is_ada: false
+      - unit_id: '5808.1'
+        name: 'Campsite #50'
+        is_ada: false
+      - unit_id: '5887.1'
+        name: 'Campsite #51'
+        is_ada: false
+      - unit_id: '5962.1'
+        name: 'Campsite #52'
+        is_ada: false
+      - unit_id: '6046.1'
+        name: 'Campsite #53'
+        is_ada: false
+      - unit_id: '6133.1'
+        name: 'Campsite #54'
+        is_ada: false
+      - unit_id: '6197.1'
+        name: 'Campsite #55'
+        is_ada: false
+      - unit_id: '6279.1'
+        name: 'Campsite #56'
+        is_ada: false
+      - unit_id: '6359.1'
+        name: 'Campsite #57'
+        is_ada: false
+      - unit_id: '6423.1'
+        name: 'Campsite #58'
+        is_ada: false
+      - unit_id: '6497.1'
+        name: 'Campsite #59'
+        is_ada: false
+      - unit_id: '6566.1'
+        name: 'Campsite #60'
+        is_ada: false
+      - unit_id: '6631.1'
+        name: 'Campsite #61'
+        is_ada: false
+      - unit_id: '6705.1'
+        name: 'Campsite #62'
+        is_ada: false
+      - unit_id: '6759.1'
+        name: 'Campsite #63'
+        is_ada: false
+      - unit_id: '6828.1'
+        name: 'Campsite #64'
+        is_ada: false
+      - unit_id: '6889.1'
+        name: 'Campsite #65'
+        is_ada: false
+      - unit_id: '6950.1'
+        name: 'Campsite #66'
+        is_ada: false
+      - unit_id: '7009.1'
+        name: 'Campsite #67'
+        is_ada: false
+      - unit_id: '7067.1'
+        name: 'Campsite #68'
+        is_ada: false
+      - unit_id: '7124.1'
+        name: 'Campsite #69'
+        is_ada: false
+      - unit_id: '7244.1'
+        name: 'Campsite #71'
+        is_ada: false
+      - unit_id: '7299.1'
+        name: 'Campsite #72'
+        is_ada: false
+      - unit_id: '7343.1'
+        name: 'Campsite #73'
+        is_ada: false
+      - unit_id: '7411.1'
+        name: 'Campsite #74'
+        is_ada: false
 park_reference:
   '718':
     park_name: Sonoma Coast State Park
     facilities:
-    - name: Bodega Dunes
-      facility_id: '2061'
-    - name: Wright's Beach (sites 1-27)
-      facility_id: '706'
+      - name: Bodega Dunes
+        facility_id: '2061'
+      - name: Wright's Beach (sites 1-27)
+        facility_id: '706'
   '731':
     park_name: Van Damme SP
     facilities:
-    - name: Group Camping Area
-      facility_id: '744'
-    - name: Hike/Bike Campsite
-      facility_id: '2170'
-    - name: Little River Spur (sites 14-30)
-      facility_id: '742'
-    - name: Lower Loop (sites 1-13)
-      facility_id: '741'
-    - name: Upper Loop (sites 31-74)
-      facility_id: '743'
+      - name: Group Camping Area
+        facility_id: '744'
+      - name: Hike/Bike Campsite
+        facility_id: '2170'
+      - name: Little River Spur (sites 14-30)
+        facility_id: '742'
+      - name: Lower Loop (sites 1-13)
+        facility_id: '741'
+      - name: Upper Loop (sites 31-74)
+        facility_id: '743'
 status:
   last_checked: '2026-08-23T22:03:21.884347-07:00'
   watches_checked_last_cycle: 1
