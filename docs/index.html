@@ -1,0 +1,693 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
+<title>campwatch</title>
+<link rel="manifest" href="manifest.json">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="campwatch">
+<style>
+  :root {
+    --bg: #0f1512;
+    --card: #161f1a;
+    --border: #2a352e;
+    --text: #eaf0ec;
+    --muted: #93a39a;
+    --accent: #4caf7d;
+    --accent-dim: #2e5c44;
+    --danger: #d9695f;
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  body {
+    margin: 0; background: var(--bg); color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+    padding-bottom: 60px;
+  }
+  header {
+    padding: 20px 16px 12px; position: sticky; top: 0; background: var(--bg);
+    z-index: 10; border-bottom: 1px solid var(--border);
+  }
+  h1 { font-size: 20px; margin: 0; }
+  .header-row { display: flex; align-items: center; justify-content: space-between; }
+  .btn-refresh {
+    background: transparent; border: 1px solid var(--border); color: var(--text);
+    width: 34px; height: 34px; border-radius: 50%; font-size: 18px;
+    display: flex; align-items: center; justify-content: center; padding: 0;
+  }
+  .btn-refresh.spinning { animation: spin 0.6s linear infinite; }
+  @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+  .subtitle { color: var(--muted); font-size: 13px; margin-top: 2px; }
+  .freshness {
+    display: inline-block; margin-top: 8px; font-size: 12px; font-weight: 600;
+    padding: 4px 10px; border-radius: 999px;
+  }
+  .freshness.fresh { background: #14301f; color: #8fe3b1; }
+  .freshness.aging { background: #3a3319; color: #e3c98f; }
+  .freshness.stale { background: #3a1a17; color: #f0a89f; }
+  .freshness.unknown { background: #1a2230; color: #93a39a; }
+  main { padding: 12px 16px 40px; max-width: 640px; margin: 0 auto; }
+  .card {
+    background: var(--card); border: 1px solid var(--border); border-radius: 14px;
+    padding: 16px; margin-bottom: 14px;
+  }
+  .card h2 { font-size: 15px; margin: 0 0 12px; display: flex; align-items: center; justify-content: space-between; cursor: pointer; user-select: none; }
+  .card h2 .hint { font-size: 11px; color: var(--muted); font-weight: normal; margin-left: 8px; }
+  .card h2 .chevron { color: var(--muted); font-size: 20px; transform: rotate(90deg); transition: transform 0.15s; margin-left: auto; padding-left: 8px; }
+  .card.collapsed h2 { margin-bottom: 0; }
+  .card.collapsed h2 .chevron { transform: rotate(0deg); }
+  .card.collapsed .card-body { display: none; }
+  label { display: block; font-size: 12px; color: var(--muted); margin: 10px 0 4px; }
+  label:first-child { margin-top: 0; }
+  input[type=text], input[type=number], input[type=time], input[type=date], select, textarea {
+    width: 100%; padding: 10px 12px; border-radius: 10px; border: 1px solid var(--border);
+    background: #0c120f; color: var(--text); font-size: 15px; font-family: inherit;
+  }
+  input:focus, select:focus, textarea:focus { outline: 2px solid var(--accent-dim); }
+  .row { display: flex; gap: 10px; }
+  .row > * { flex: 1; }
+  .checkbox-row { display: flex; align-items: center; gap: 8px; margin: 10px 0; }
+  .checkbox-row input { width: 18px; height: 18px; }
+  .checkbox-row label { margin: 0; color: var(--text); font-size: 14px; }
+  button {
+    font-family: inherit; font-size: 15px; border-radius: 10px; border: none;
+    padding: 12px 16px; cursor: pointer; font-weight: 600;
+  }
+  .btn-primary { background: var(--accent); color: #08150e; width: 100%; }
+  .btn-secondary { background: transparent; color: var(--text); border: 1px solid var(--border); width: 100%; }
+  .btn-danger { background: transparent; color: var(--danger); border: 1px solid var(--danger); padding: 8px 12px; font-size: 13px; }
+  .btn-small { background: var(--accent-dim); color: var(--text); padding: 8px 12px; font-size: 13px; }
+  .watch-item {
+    border: 1px solid var(--border); border-radius: 10px; padding: 12px; margin-bottom: 10px; background: #0c120f;
+  }
+  .watch-item .watch-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; cursor: pointer; user-select: none; }
+  .watch-item .watch-header span:first-child { font-weight: 600; font-size: 14px; display: flex; flex-direction: column; gap: 2px; }
+  .watch-item .watch-summary { font-weight: normal; font-size: 12px; color: var(--muted); }
+  .watch-item .watch-header .chevron { color: var(--muted); font-size: 20px; transform: rotate(90deg); transition: transform 0.15s; }
+  .watch-item:not(.expanded) .watch-header .chevron { transform: rotate(0deg); }
+  .watch-item:not(.expanded) .watch-header { margin-bottom: 0; }
+  .watch-item:not(.expanded) .watch-body { display: none; }
+  .site-picker { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+  .site-chip {
+    background: #0c120f; border: 1px solid var(--border); color: var(--text);
+    border-radius: 999px; padding: 6px 12px; font-size: 13px; cursor: pointer;
+    font-family: inherit;
+  }
+  .site-chip-selected { background: var(--accent); color: #08150e; border-color: var(--accent); font-weight: 600; }
+  .toolbar-bottom {
+    position: fixed; bottom: 0; left: 0; right: 0; background: var(--bg);
+    border-top: 1px solid var(--border); padding: 10px 16px calc(10px + env(safe-area-inset-bottom));
+    display: flex; gap: 10px; z-index: 20;
+  }
+  .toast-bottom {
+    position: fixed; left: 16px; right: 16px;
+    bottom: calc(64px + env(safe-area-inset-bottom));
+    padding: 10px 14px; border-radius: 10px; font-size: 13px; text-align: center;
+    z-index: 25; opacity: 0; pointer-events: none; transition: opacity 0.2s;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.4);
+  }
+  .toast-bottom.show { opacity: 1; }
+  .toast-bottom.ok { background: #14301f; color: #8fe3b1; }
+  .toast-bottom.err { background: #3a1a17; color: #f0a89f; }
+  .toast-bottom.busy { background: #17222d; color: #9bc4e6; }
+  .status { font-size: 13px; padding: 10px 12px; border-radius: 10px; margin-bottom: 12px; display: none; }
+  .status.show { display: block; }
+  .status.ok { background: #14301f; color: #8fe3b1; }
+  .status.err { background: #3a1a17; color: #f0a89f; }
+  .status.busy { background: #17222d; color: #9bc4e6; }
+  #setupScreen { display: flex; }
+  #appScreen { display: none; }
+  .field-note { font-size: 11px; color: var(--muted); margin-top: 4px; }
+  a { color: var(--accent); }
+</style>
+</head>
+<body>
+
+<div id="setupScreen">
+  <main style="padding-top: 40px;">
+    <h1>Connect to campwatch</h1>
+    <p class="subtitle" style="margin-bottom:20px;">This runs entirely in your browser and talks
+      directly to GitHub -- nothing is sent anywhere else. Your token is stored only on this
+      device (localStorage).</p>
+
+    <div class="card">
+      <label>GitHub username / org</label>
+      <input type="text" id="setupOwner" placeholder="e.g. banyan-e">
+      <label>Repository name</label>
+      <input type="text" id="setupRepo" placeholder="e.g. campwatch">
+      <label>Personal access token <span class="field-note" style="display:inline">(fine-grained, this repo only, Contents: read/write, Actions: read/write)</span></label>
+      <input type="text" id="setupToken" placeholder="github_pat_...">
+      <div class="field-note">Create one at github.com &rarr; Settings &rarr; Developer settings &rarr;
+        Personal access tokens &rarr; Fine-grained tokens. Scope it to only this repository.</div>
+    </div>
+
+    <div id="setupStatus" class="status"></div>
+    <button class="btn-primary" onclick="connect()">Connect</button>
+  </main>
+</div>
+
+<div id="appScreen">
+  <header>
+    <div class="header-row">
+      <h1>campwatch</h1>
+      <button class="btn-refresh" id="refreshBtn" onclick="manualRefresh()" title="Refresh from GitHub">&#8635;</button>
+    </div>
+    <div class="subtitle" id="repoLabel"></div>
+    <div class="freshness" id="freshnessBadge"></div>
+  </header>
+  <main>
+    <div id="topStatus" class="status"></div>
+
+    <div class="card collapsed" data-card="activeHours">
+      <h2 onclick="toggleCard('activeHours')">Active hours <span class="hint">when alerts are sent</span> <span class="chevron">&rsaquo;</span></h2>
+      <div class="card-body">
+        <div class="row">
+          <div><label>From</label><input type="time" id="activeStart"></div>
+          <div><label>To</label><input type="time" id="activeEnd"></div>
+        </div>
+        <label>Timezone</label>
+        <select id="timezone">
+          <option value="America/Los_Angeles">Pacific (California)</option>
+          <option value="America/Denver">Mountain</option>
+          <option value="America/Chicago">Central</option>
+          <option value="America/New_York">Eastern</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="card collapsed" data-card="scanSpeed">
+      <h2 onclick="toggleCard('scanSpeed')">Scan speed <span class="chevron">&rsaquo;</span></h2>
+      <div class="card-body">
+        <label>Coverage watches -- check every (minutes)</label>
+        <input type="number" id="coverageInterval" min="5">
+        <label>Targeted watches -- check every (minutes)</label>
+        <input type="number" id="targetedInterval" min="1">
+        <div class="checkbox-row">
+          <input type="checkbox" id="peakEnabled">
+          <label for="peakEnabled">Speed boost during peak hours</label>
+        </div>
+        <div class="row">
+          <div><label>Peak from</label><input type="time" id="peakStart"></div>
+          <div><label>Peak to</label><input type="time" id="peakEnd"></div>
+        </div>
+        <label>During peak, targeted watches check every (minutes)</label>
+        <input type="number" id="peakInterval" min="1">
+      </div>
+    </div>
+
+    <div class="card" data-card="coverage">
+      <h2 onclick="toggleCard('coverage')">Coverage watches <span class="hint">broad, multiple parks</span> <span class="chevron">&rsaquo;</span></h2>
+      <div class="card-body">
+        <div id="coverageList"></div>
+        <button class="btn-small" onclick="addWatch('coverage')">+ Add coverage watch</button>
+      </div>
+    </div>
+
+    <div class="card" data-card="targeted">
+      <h2 onclick="toggleCard('targeted')">Targeted watches <span class="hint">one specific trip, checked faster</span> <span class="chevron">&rsaquo;</span></h2>
+      <div class="card-body">
+        <div id="targetedList"></div>
+        <button class="btn-small" onclick="addWatch('targeted')">+ Add targeted watch</button>
+      </div>
+    </div>
+
+    <div class="card collapsed" data-card="notifications">
+      <h2 onclick="toggleCard('notifications')">Notifications <span class="chevron">&rsaquo;</span></h2>
+      <div class="card-body">
+        <div class="checkbox-row"><input type="checkbox" id="notifyEmail"><label for="notifyEmail">Email</label></div>
+        <div class="checkbox-row"><input type="checkbox" id="notifySms"><label for="notifySms">SMS</label></div>
+        <div class="checkbox-row"><input type="checkbox" id="notifyNtfy"><label for="notifyNtfy">Push (ntfy)</label></div>
+        <div class="field-note">Credentials (passwords, topic names) are managed as GitHub
+          Secrets, not here -- that's a one-time setup, not something you'll change often.
+          This just turns each channel on/off.</div>
+      </div>
+    </div>
+
+    <button class="btn-secondary" onclick="disconnect()" style="margin-top:4px;">Disconnect this device</button>
+  </main>
+
+  <div class="toast-bottom" id="bottomToast"></div>
+  <div class="toolbar-bottom">
+    <button class="btn-primary" style="flex:1" onclick="saveConfig()">Save changes</button>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/js-yaml/4.1.0/js-yaml.min.js"></script>
+<script>
+let state = { owner: '', repo: '', token: '', sha: '', config: null };
+const parkSelectionByWatch = {}; // UI-only, never saved: `${type}:${idx}` -> selected place_id
+const expandedWatches = {}; // UI-only, never saved: `${type}:${idx}` -> true if expanded
+
+function loadConnection() {
+  const raw = localStorage.getItem('campwatch_conn');
+  if (!raw) return false;
+  const c = JSON.parse(raw);
+  state.owner = c.owner; state.repo = c.repo; state.token = c.token;
+  return true;
+}
+
+function saveConnection() {
+  localStorage.setItem('campwatch_conn', JSON.stringify({
+    owner: state.owner, repo: state.repo, token: state.token
+  }));
+}
+
+function showStatus(id, msg, kind) {
+  const el = document.getElementById(id);
+  el.textContent = msg;
+  el.className = 'status show ' + kind;
+}
+
+let toastTimer = null;
+function showToast(msg, kind, autoHideMs) {
+  const el = document.getElementById('bottomToast');
+  el.textContent = msg;
+  el.className = 'toast-bottom show ' + kind;
+  if (toastTimer) clearTimeout(toastTimer);
+  if (autoHideMs) {
+    toastTimer = setTimeout(() => { el.className = 'toast-bottom ' + kind; }, autoHideMs);
+  }
+}
+
+function ghHeaders() {
+  return {
+    'Authorization': 'Bearer ' + state.token,
+    'Accept': 'application/vnd.github+json',
+    'X-GitHub-Api-Version': '2022-11-28'
+  };
+}
+
+async function connect() {
+  state.owner = document.getElementById('setupOwner').value.trim();
+  state.repo = document.getElementById('setupRepo').value.trim();
+  state.token = document.getElementById('setupToken').value.trim();
+  if (!state.owner || !state.repo || !state.token) {
+    showStatus('setupStatus', 'Fill in all three fields.', 'err');
+    return;
+  }
+  showStatus('setupStatus', 'Connecting...', 'busy');
+  try {
+    await loadConfigFromGitHub();
+    saveConnection();
+    enterApp();
+  } catch (e) {
+    showStatus('setupStatus', 'Could not connect: ' + e.message, 'err');
+  }
+}
+
+function disconnect() {
+  localStorage.removeItem('campwatch_conn');
+  location.reload();
+}
+
+async function loadConfigFromGitHub() {
+  const url = `https://api.github.com/repos/${state.owner}/${state.repo}/contents/config.yaml`;
+  const resp = await fetch(url, { headers: ghHeaders() });
+  if (!resp.ok) {
+    const body = await resp.json().catch(() => ({}));
+    throw new Error(`${resp.status} ${body.message || resp.statusText}`);
+  }
+  const data = await resp.json();
+  state.sha = data.sha;
+  const yamlText = decodeURIComponent(escape(atob(data.content)));
+  state.config = jsyaml.load(yamlText);
+}
+
+async function manualRefresh() {
+  const btn = document.getElementById('refreshBtn');
+  btn.classList.add('spinning');
+  try {
+    await loadConfigFromGitHub();
+    populateForm();
+    await updateFreshnessBadge();
+    showToast('Refreshed from GitHub.', 'ok', 2500);
+  } catch (e) {
+    showToast('Refresh failed: ' + e.message, 'err', 4000);
+  } finally {
+    btn.classList.remove('spinning');
+  }
+}
+
+function enterApp() {
+  document.getElementById('setupScreen').style.display = 'none';
+  document.getElementById('appScreen').style.display = 'block';
+  document.getElementById('repoLabel').textContent = `${state.owner}/${state.repo}`;
+  populateForm();
+  updateFreshnessBadge();
+  setInterval(updateFreshnessBadge, 60000); // keep it live without touching the form
+}
+
+function formatRelativeTime(isoString) {
+  const then = new Date(isoString);
+  const diffMs = Date.now() - then.getTime();
+  const diffMin = Math.floor(diffMs / 60000);
+  if (diffMin < 1) return 'just now';
+  if (diffMin === 1) return '1 minute ago';
+  if (diffMin < 60) return `${diffMin} minutes ago`;
+  const diffHr = Math.floor(diffMin / 60);
+  if (diffHr === 1) return '1 hour ago';
+  if (diffHr < 24) return `${diffHr} hours ago`;
+  const diffDay = Math.floor(diffHr / 24);
+  return diffDay === 1 ? '1 day ago' : `${diffDay} days ago`;
+}
+
+function freshnessLevel(isoString) {
+  const diffMin = (Date.now() - new Date(isoString).getTime()) / 60000;
+  if (diffMin < 20) return 'fresh';   // comfortably within one 5-min sync + buffer
+  if (diffMin < 60) return 'aging';   // missed a cycle or two, not necessarily broken
+  return 'stale';                     // desktop likely off, sleeping, or disconnected
+}
+
+async function updateFreshnessBadge() {
+  // Deliberately does NOT touch state.config or call populateForm() --
+  // a periodic full refresh would silently overwrite any edits you're
+  // mid-typing. This only reads the one field it needs.
+  const badge = document.getElementById('freshnessBadge');
+  try {
+    const url = `https://api.github.com/repos/${state.owner}/${state.repo}/contents/config.yaml`;
+    const resp = await fetch(url, { headers: ghHeaders() });
+    if (!resp.ok) throw new Error(`${resp.status}`);
+    const data = await resp.json();
+    const yamlText = decodeURIComponent(escape(atob(data.content)));
+    const cfg = jsyaml.load(yamlText);
+
+    if (!cfg.status || !cfg.status.last_checked) {
+      badge.textContent = 'Desktop hasn\'t reported in yet';
+      badge.className = 'freshness unknown';
+      return;
+    }
+    const level = freshnessLevel(cfg.status.last_checked);
+    const relative = formatRelativeTime(cfg.status.last_checked);
+    const count = cfg.status.watches_checked_last_cycle;
+    const countNote = count ? ` (${count} watch${count === 1 ? '' : 'es'} checked)` : '';
+    badge.textContent = `Last checked ${relative}${countNote}`;
+    badge.className = 'freshness ' + level;
+  } catch (e) {
+    badge.textContent = 'Could not check freshness';
+    badge.className = 'freshness unknown';
+  }
+}
+
+function toggleCard(name) {
+  const card = document.querySelector(`[data-card="${name}"]`);
+  card.classList.toggle('collapsed');
+}
+
+function populateForm() {
+  const c = state.config;
+  document.getElementById('activeStart').value = c.schedule.active_hours[0].start;
+  document.getElementById('activeEnd').value = c.schedule.active_hours[0].end;
+  document.getElementById('timezone').value = c.schedule.timezone;
+
+  document.getElementById('coverageInterval').value = c.speed.coverage_interval_minutes;
+  document.getElementById('targetedInterval').value = c.speed.targeted_interval_minutes;
+  document.getElementById('peakEnabled').checked = !!c.speed.peak.enabled;
+  document.getElementById('peakStart').value = c.speed.peak.windows[0]?.start || '17:00';
+  document.getElementById('peakEnd').value = c.speed.peak.windows[0]?.end || '21:00';
+  document.getElementById('peakInterval').value = c.speed.peak.interval_minutes;
+
+  document.getElementById('notifyEmail').checked = !!c.notifications.email?.enabled;
+  document.getElementById('notifySms').checked = !!c.notifications.sms?.enabled;
+  document.getElementById('notifyNtfy').checked = !!c.notifications.ntfy?.enabled;
+
+  renderWatchList('coverage');
+  renderWatchList('targeted');
+}
+
+function renderWatchList(type) {
+  const container = document.getElementById(type + 'List');
+  container.innerHTML = '';
+  (state.config[type] || []).forEach((watch, idx) => {
+    container.appendChild(renderWatchItem(type, watch, idx));
+  });
+}
+
+function renderWatchItem(type, watch, idx) {
+  const div = document.createElement('div');
+  const watchKey = `${type}:${idx}`;
+  const isExpanded = !!expandedWatches[watchKey];
+  div.className = 'watch-item' + (isExpanded ? ' expanded' : '');
+  const unitIds = (watch.unit_ids || []).map(String);
+  const siteRef = state.config.site_reference && state.config.site_reference[String(watch.facility_id)];
+  const parkRef = state.config.park_reference || {};
+  const hasParkLibrary = Object.keys(parkRef).length > 0;
+
+  // Figure out which park is selected: prefer the transient UI selection
+  // (set when the user just picked a park but hasn't picked a facility yet),
+  // falling back to reverse-matching the watch's current facility_id.
+  let selectedPlaceId = parkSelectionByWatch[watchKey] || '';
+  if (!selectedPlaceId && watch.facility_id) {
+    for (const [placeId, park] of Object.entries(parkRef)) {
+      if ((park.facilities || []).some(f => String(f.facility_id) === String(watch.facility_id))) {
+        selectedPlaceId = placeId;
+        break;
+      }
+    }
+  }
+
+  const siteCount = unitIds.length;
+  const baseSummary = siteCount ? `${siteCount} site${siteCount > 1 ? 's' : ''} picked`
+                                 : (watch.keywords || []).join(', ') || 'no filter set';
+  const summary = watch.require_full_range ? `${baseSummary} \u00b7 full range only` : baseSummary;
+
+  div.innerHTML = `
+    <div class="watch-header" onclick="toggleWatchExpanded('${type}', ${idx})">
+      <span>${idx + 1}. ${esc(watch.name || 'New watch')}<span class="watch-summary">${esc(summary)}</span></span>
+      <span class="chevron">&rsaquo;</span>
+    </div>
+    <div class="watch-body">
+    <button class="btn-danger" onclick="event.stopPropagation(); removeWatch('${type}', ${idx})" style="margin-bottom:10px;">Remove this watch</button>
+    <label>Name</label>
+    <input type="text" data-field="name" value="${esc(watch.name || '')}" placeholder="e.g. Pfeiffer Big Sur SP">
+
+    ${hasParkLibrary ? `
+      <label>State park</label>
+      <select data-field="_park_select" onchange="onParkSelected('${type}', ${idx}, this.value)">
+        <option value="">-- choose a park --</option>
+        ${Object.entries(parkRef).map(([placeId, park]) => `
+          <option value="${esc(placeId)}" ${placeId === selectedPlaceId ? 'selected' : ''}>${esc(park.park_name)}</option>
+        `).join('')}
+      </select>
+      <label>Facility (campground)</label>
+      <select data-field="facility_id" onchange="updateWatchField('${type}', ${idx}, this)">
+        <option value="">-- choose a facility --</option>
+        ${selectedPlaceId ? (parkRef[selectedPlaceId].facilities || []).map(f => `
+          <option value="${esc(f.facility_id)}" ${String(f.facility_id) === String(watch.facility_id) ? 'selected' : ''}>${esc(f.name)}</option>
+        `).join('') : ''}
+      </select>
+      <div class="field-note">Don't see the park you want? On the desktop, run:
+        <code>python campwatch.py lookup "park name" --save</code> to add it here.</div>
+    ` : `
+      <label>Facility ID <span class="field-note" style="display:inline">(from the lookup command)</span></label>
+      <input type="text" data-field="facility_id" value="${esc(watch.facility_id || '')}">
+      <div class="field-note">Tip: run <code>python campwatch.py lookup "park name" --save</code> on the
+        desktop to replace this with a proper park/facility dropdown.</div>
+    `}
+
+    <div class="row">
+      <div><label>Start date</label><input type="date" data-field="start_date" value="${watch.start_date || ''}"></div>
+      <div><label>End date</label><input type="date" data-field="end_date" value="${watch.end_date || ''}"></div>
+    </div>
+    ${type === 'targeted' ? `
+      <div class="checkbox-row">
+        <input type="checkbox" data-field="require_full_range" ${watch.require_full_range ? 'checked' : ''}>
+        <label>Require the entire date range together (not just any single night)</label>
+      </div>
+      <div class="field-note">Off (default): notified if any single night in the range opens.
+        On: only notified when every night is open together on the same site, as one bookable stay.</div>
+    ` : ''}
+    <label>Keywords <span class="field-note" style="display:inline">(comma-separated, ignored if specific sites are picked below)</span></label>
+    <input type="text" data-field="keywords" value="${esc((watch.keywords || []).join(', '))}" placeholder="premium, hookup, bluff">
+    <label>Specific sites <span class="field-note" style="display:inline">(optional -- tap to pick exact sites instead of matching by keyword)</span></label>
+    <div class="site-picker" data-site-picker>
+      ${renderSitePickerContents(type, idx, siteRef, unitIds)}
+    </div>
+    </div>
+  `;
+  div.querySelectorAll('[data-field]').forEach(input => {
+    input.addEventListener('change', () => updateWatchField(type, idx, input));
+  });
+  return div;
+}
+
+function renderSitePickerContents(type, idx, ref, selectedUnitIds) {
+  if (!ref || !ref.sites || !ref.sites.length) {
+    return `<div class="field-note">No saved site list for this facility yet. On the desktop, run:
+      <code>python campwatch.py sites &lt;facility_id&gt; --save</code> to populate this.</div>`;
+  }
+  return ref.sites.map(site => {
+    const isSelected = selectedUnitIds.includes(String(site.unit_id));
+    const adaTag = site.is_ada ? ' [ADA]' : '';
+    return `<button type="button" class="site-chip ${isSelected ? 'site-chip-selected' : ''}"
+              onclick="toggleSiteChip('${type}', ${idx}, '${esc(String(site.unit_id))}')">
+              ${esc(site.name)}${adaTag}
+            </button>`;
+  }).join('');
+}
+
+function onParkSelected(type, idx, placeId) {
+  // Selecting a park doesn't set facility_id itself -- it just needs to
+  // re-render so the facility dropdown populates with that park's options.
+  // Track the choice in transient UI state (never written to config.yaml),
+  // and clear the old facility_id/unit_ids since they belonged to whatever
+  // was selected before, and wouldn't make sense under the new park.
+  parkSelectionByWatch[`${type}:${idx}`] = placeId;
+  const watch = state.config[type][idx];
+  watch.facility_id = '';
+  watch.unit_ids = [];
+  renderWatchList(type);
+}
+
+function toggleSiteChip(type, idx, unitId) {
+  const watch = state.config[type][idx];
+  const current = (watch.unit_ids || []).map(String);
+  const pos = current.indexOf(unitId);
+  if (pos >= 0) {
+    current.splice(pos, 1);
+  } else {
+    current.push(unitId);
+  }
+  watch.unit_ids = current;
+  renderWatchList(type); // refresh chip highlighting
+}
+
+function updateWatchField(type, idx, input) {
+  const field = input.dataset.field;
+  const watch = state.config[type][idx];
+  if (field === 'keywords') {
+    watch.keywords = input.value.split(',').map(s => s.trim()).filter(Boolean);
+  } else if (field === 'require_full_range') {
+    watch.require_full_range = input.checked;
+  } else {
+    watch[field] = input.value;
+  }
+  if (field === 'name' || field === 'facility_id') renderWatchList(type); // refresh header label / site picker
+}
+
+function toggleWatchExpanded(type, idx) {
+  const key = `${type}:${idx}`;
+  expandedWatches[key] = !expandedWatches[key];
+  renderWatchList(type);
+}
+
+function addWatch(type) {
+  if (!state.config[type]) state.config[type] = [];
+  state.config[type].push({
+    name: 'New watch', facility_id: '', start_date: '', end_date: '',
+    keywords: ['premium'], unit_ids: []
+  });
+  // Auto-expand the one you just added -- collapsing it immediately after
+  // tapping "+ Add" would be a bad first impression.
+  expandedWatches[`${type}:${state.config[type].length - 1}`] = true;
+  renderWatchList(type);
+}
+
+function removeWatch(type, idx) {
+  state.config[type].splice(idx, 1);
+  // Indices shift after a removal, so any transient per-index state (park
+  // selection, expand/collapse) would now point at the wrong watch --
+  // clearing both is simpler and safer than trying to renumber them.
+  Object.keys(parkSelectionByWatch).forEach(k => delete parkSelectionByWatch[k]);
+  Object.keys(expandedWatches).forEach(k => delete expandedWatches[k]);
+  renderWatchList(type);
+}
+
+function esc(s) {
+  return String(s).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
+}
+
+function collectFormIntoConfig() {
+  const c = state.config;
+  c.schedule.active_hours[0].start = document.getElementById('activeStart').value;
+  c.schedule.active_hours[0].end = document.getElementById('activeEnd').value;
+  c.schedule.timezone = document.getElementById('timezone').value;
+
+  c.speed.coverage_interval_minutes = Number(document.getElementById('coverageInterval').value);
+  c.speed.targeted_interval_minutes = Number(document.getElementById('targetedInterval').value);
+  c.speed.peak.enabled = document.getElementById('peakEnabled').checked;
+  c.speed.peak.windows = [{
+    start: document.getElementById('peakStart').value,
+    end: document.getElementById('peakEnd').value
+  }];
+  c.speed.peak.interval_minutes = Number(document.getElementById('peakInterval').value);
+
+  c.notifications.email = c.notifications.email || {};
+  c.notifications.sms = c.notifications.sms || {};
+  c.notifications.ntfy = c.notifications.ntfy || {};
+  c.notifications.email.enabled = document.getElementById('notifyEmail').checked;
+  c.notifications.sms.enabled = document.getElementById('notifySms').checked;
+  c.notifications.ntfy.enabled = document.getElementById('notifyNtfy').checked;
+}
+
+async function saveConfig() {
+  collectFormIntoConfig();
+  showToast('Saving to GitHub...', 'busy');
+  try {
+    await saveConfigWithConflictRetry();
+    showToast('Saved -- your desktop will pick this up within 5 minutes.', 'ok', 4000);
+  } catch (e) {
+    showToast('Save failed: ' + e.message, 'err', 6000);
+  }
+}
+
+async function saveConfigWithConflictRetry(retriesLeft = 1) {
+  const url = `https://api.github.com/repos/${state.owner}/${state.repo}/contents/config.yaml`;
+  const yamlText = jsyaml.dump(state.config, { lineWidth: 100 });
+  const resp = await fetch(url, {
+    method: 'PUT',
+    headers: ghHeaders(),
+    body: JSON.stringify({
+      message: 'Update config via campwatch mobile UI',
+      content: btoa(unescape(encodeURIComponent(yamlText))),
+      sha: state.sha
+    })
+  });
+
+  if (resp.status === 409 && retriesLeft > 0) {
+    // The desktop's periodic heartbeat (or a lookup/sites --save) almost
+    // certainly changed status/site_reference/park_reference since we
+    // loaded this. Pull the current copy, take just those desktop-owned
+    // sections from it, and merge them into what we're about to save --
+    // this keeps your edits AND the desktop's newer data, instead of
+    // whichever side saves second silently erasing the other's changes.
+    const getResp = await fetch(url, { headers: ghHeaders() });
+    if (!getResp.ok) throw new Error('Could not refresh before retrying save');
+    const getData = await getResp.json();
+    state.sha = getData.sha;
+    const remoteYaml = decodeURIComponent(escape(atob(getData.content)));
+    const remoteCfg = jsyaml.load(remoteYaml) || {};
+    for (const key of ['status', 'site_reference', 'park_reference']) {
+      if (remoteCfg[key] !== undefined) state.config[key] = remoteCfg[key];
+    }
+    return saveConfigWithConflictRetry(retriesLeft - 1);
+  }
+
+  if (!resp.ok) {
+    const body = await resp.json().catch(() => ({}));
+    throw new Error(`${resp.status} ${body.message || resp.statusText}`);
+  }
+  const data = await resp.json();
+  state.sha = data.content.sha;
+}
+
+(async function init() {
+  if (loadConnection()) {
+    try {
+      await loadConfigFromGitHub();
+      enterApp();
+    } catch (e) {
+      document.getElementById('setupOwner').value = state.owner;
+      document.getElementById('setupRepo').value = state.repo;
+      document.getElementById('setupToken').value = state.token;
+      showStatus('setupStatus', 'Reconnect needed: ' + e.message, 'err');
+    }
+  }
+})();
+</script>
+</body>
+</html>
