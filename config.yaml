@@ -416,5 +416,5 @@ park_reference:
     - name: Upper Loop (sites 31-74)
       facility_id: '743'
 status:
-  last_checked: '2026-09-14T11:39:27.332786-07:00'
+  last_checked: '2026-09-14T11:59:37.051213-07:00'
   watches_checked_last_cycle: 0
