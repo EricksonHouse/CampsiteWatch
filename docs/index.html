@@ -363,27 +363,39 @@ function freshnessLevel(isoString) {
   return 'stale';                     // desktop likely off, sleeping, or disconnected
 }
 
+async function fetchHeartbeat() {
+  // The desktop writes its heartbeat to status.json on a separate `status`
+  // branch (so it doesn't trigger Pages rebuilds). Fall back to the old
+  // location inside config.yaml for setups that haven't migrated yet.
+  const base = `https://api.github.com/repos/${state.owner}/${state.repo}/contents`;
+  const resp = await fetch(`${base}/status.json?ref=status`, { headers: ghHeaders() });
+  if (resp.ok) {
+    const data = await resp.json();
+    return JSON.parse(atob(data.content));
+  }
+  if (resp.status !== 404) throw new Error(`${resp.status}`);
+  const cfgResp = await fetch(`${base}/config.yaml`, { headers: ghHeaders() });
+  if (!cfgResp.ok) throw new Error(`${cfgResp.status}`);
+  const data = await cfgResp.json();
+  return jsyaml.load(decodeURIComponent(escape(atob(data.content)))).status;
+}
+
 async function updateFreshnessBadge() {
   // Deliberately does NOT touch state.config or call populateForm() --
   // a periodic full refresh would silently overwrite any edits you're
   // mid-typing. This only reads the one field it needs.
   const badge = document.getElementById('freshnessBadge');
   try {
-    const url = `https://api.github.com/repos/${state.owner}/${state.repo}/contents/config.yaml`;
-    const resp = await fetch(url, { headers: ghHeaders() });
-    if (!resp.ok) throw new Error(`${resp.status}`);
-    const data = await resp.json();
-    const yamlText = decodeURIComponent(escape(atob(data.content)));
-    const cfg = jsyaml.load(yamlText);
+    const status = await fetchHeartbeat();
 
-    if (!cfg.status || !cfg.status.last_checked) {
+    if (!status || !status.last_checked) {
       badge.textContent = 'Desktop hasn\'t reported in yet';
       badge.className = 'freshness unknown';
       return;
     }
-    const level = freshnessLevel(cfg.status.last_checked);
-    const relative = formatRelativeTime(cfg.status.last_checked);
-    const count = cfg.status.watches_checked_last_cycle;
+    const level = freshnessLevel(status.last_checked);
+    const relative = formatRelativeTime(status.last_checked);
+    const count = status.watches_checked_last_cycle;
     const countNote = count ? ` (${count} watch${count === 1 ? '' : 'es'} checked)` : '';
     badge.textContent = `Last checked ${relative}${countNote}`;
     badge.className = 'freshness ' + level;
