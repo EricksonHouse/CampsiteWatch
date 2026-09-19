@@ -137,20 +137,10 @@ targeted:
 notifications:
   email:
     enabled: false
-    smtp_server: smtp.gmail.com
-    smtp_port: 587
-    from_address: you@gmail.com
-    from_password: REPLACE_WITH_APP_PASSWORD
-    to_address: you@gmail.com
   sms:
     enabled: false
-    email: {}
-    sms_gateway_address: 5551234567@txt.att.net
   ntfy:
     enabled: true
-    topic: PLACEHOLDER
-    server: https://ntfy.sh
-    priority: high
 state_file: campwatch_state.json
 log_file: campwatch.log
 site_reference:
