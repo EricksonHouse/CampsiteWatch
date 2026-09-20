@@ -66,7 +66,7 @@
   label:first-child { margin-top: 0; }
   input[type=text], input[type=number], input[type=time], input[type=date], select, textarea {
     width: 100%; padding: 10px 12px; border-radius: 10px; border: 1px solid var(--border);
-    background: #0c120f; color: var(--text); font-size: 15px; font-family: inherit;
+    background: #0c120f; color: var(--text); font-size: 16px; font-family: inherit; /* 16px stops iOS zooming in on focus */
   }
   input:focus, select:focus, textarea:focus { outline: 2px solid var(--accent-dim); }
   .row { display: flex; gap: 10px; }
@@ -122,11 +122,22 @@
   .status.busy { background: #17222d; color: #9bc4e6; }
   #setupScreen { display: flex; }
   #appScreen { display: none; }
+  #loadingScreen { display: none; padding: 80px 16px; text-align: center; color: var(--muted); font-size: 14px; }
+  .has-conn #setupScreen { display: none; }
+  .has-conn #loadingScreen { display: block; }
+  .watch-item .watch-summary { line-height: 1.35; }
   .field-note { font-size: 11px; color: var(--muted); margin-top: 4px; }
   a { color: var(--accent); }
 </style>
+<script>
+  // Runs before first paint: if this device is already connected, show a loading
+  // state instead of flashing the Connect form while the config loads.
+  try { if (localStorage.getItem('campwatch_conn')) document.documentElement.classList.add('has-conn'); } catch (e) {}
+</script>
 </head>
 <body>
+
+<div id="loadingScreen">Loading your watches&hellip;</div>
 
 <div id="setupScreen">
   <main style="padding-top: 40px;">
@@ -233,13 +244,13 @@
 
   <div class="toast-bottom" id="bottomToast"></div>
   <div class="toolbar-bottom">
-    <button class="btn-primary" style="flex:1" onclick="saveConfig()">Save changes</button>
+    <button class="btn-primary" id="saveBtn" style="flex:1" onclick="saveConfig()">Save changes</button>
   </div>
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/js-yaml/4.1.0/js-yaml.min.js"></script>
 <script>
-let state = { owner: '', repo: '', token: '', sha: '', config: null };
+let state = { owner: '', repo: '', token: '', sha: '', config: null, dirty: false };
 const parkSelectionByWatch = {}; // UI-only, never saved: `${type}:${idx}` -> selected place_id
 const expandedWatches = {}; // UI-only, never saved: `${type}:${idx}` -> true if expanded
 
@@ -319,10 +330,12 @@ async function loadConfigFromGitHub() {
 }
 
 async function manualRefresh() {
+  if (state.dirty && !confirm('You have unsaved changes. Discard them and reload from GitHub?')) return;
   const btn = document.getElementById('refreshBtn');
   btn.classList.add('spinning');
   try {
     await loadConfigFromGitHub();
+    clearDirty();
     populateForm();
     await updateFreshnessBadge();
     showToast('Refreshed from GitHub.', 'ok', 2500);
@@ -334,10 +347,12 @@ async function manualRefresh() {
 }
 
 function enterApp() {
+  document.getElementById('loadingScreen').style.display = 'none';
   document.getElementById('setupScreen').style.display = 'none';
   document.getElementById('appScreen').style.display = 'block';
   document.getElementById('repoLabel').textContent = `${state.owner}/${state.repo}`;
   populateForm();
+  applySavedCardState();
   updateFreshnessBadge();
   setInterval(updateFreshnessBadge, 60000); // keep it live without touching the form
 }
@@ -405,9 +420,74 @@ async function updateFreshnessBadge() {
   }
 }
 
+const UI_KEY = 'campwatch_ui';
+
+function loadUiPrefs() {
+  try { return JSON.parse(localStorage.getItem(UI_KEY)) || {}; } catch (e) { return {}; }
+}
+
+function saveUiPrefs(prefs) {
+  try { localStorage.setItem(UI_KEY, JSON.stringify(prefs)); } catch (e) { /* private mode etc. -- just don't remember */ }
+}
+
 function toggleCard(name) {
   const card = document.querySelector(`[data-card="${name}"]`);
   card.classList.toggle('collapsed');
+  const prefs = loadUiPrefs();
+  prefs.collapsed = prefs.collapsed || {};
+  prefs.collapsed[name] = card.classList.contains('collapsed');
+  saveUiPrefs(prefs);
+}
+
+// Restore whichever sections you last left open or closed; sections you've
+// never touched keep their built-in default.
+function applySavedCardState() {
+  const collapsed = loadUiPrefs().collapsed || {};
+  document.querySelectorAll('[data-card]').forEach(card => {
+    const saved = collapsed[card.dataset.card];
+    if (typeof saved === 'boolean') card.classList.toggle('collapsed', saved);
+  });
+}
+
+function markDirty() {
+  if (state.dirty) return;
+  state.dirty = true;
+  document.getElementById('saveBtn').textContent = 'Save changes ●';
+}
+
+function clearDirty() {
+  state.dirty = false;
+  document.getElementById('saveBtn').textContent = 'Save changes';
+}
+
+const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+function parseIsoDate(s) {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(s || '');
+  return m ? new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3])) : null;
+}
+
+// "Nov 25-28, 2026" / "Nov 25 - Jan 30, 2027" / "dates not set"
+function formatDateRange(startIso, endIso) {
+  const s = parseIsoDate(startIso), e = parseIsoDate(endIso);
+  if (!s || !e) return 'dates not set';
+  const sameYear = s.getFullYear() === e.getFullYear();
+  const sameMonth = sameYear && s.getMonth() === e.getMonth();
+  const from = `${MONTHS[s.getMonth()]} ${s.getDate()}${sameYear ? '' : ', ' + s.getFullYear()}`;
+  const to = sameMonth ? `${e.getDate()}` : `${MONTHS[e.getMonth()]} ${e.getDate()}`;
+  return `${from}${sameMonth ? '–' : ' – '}${to}, ${e.getFullYear()}`;
+}
+
+function facilityLabel(watch) {
+  const fid = String(watch.facility_id || '');
+  if (!fid) return 'no campground chosen';
+  const siteRef = state.config.site_reference && state.config.site_reference[fid];
+  if (siteRef && siteRef.facility_name) return siteRef.facility_name.replace(/\s*\(sites?[^)]*\)\s*$/i, '');
+  for (const park of Object.values(state.config.park_reference || {})) {
+    const f = (park.facilities || []).find(x => String(x.facility_id) === fid);
+    if (f) return f.name.replace(/\s*\(sites?[^)]*\)\s*$/i, '');
+  }
+  return `facility ${fid}`;
 }
 
 function populateForm() {
@@ -463,9 +543,14 @@ function renderWatchItem(type, watch, idx) {
   }
 
   const siteCount = unitIds.length;
-  const baseSummary = siteCount ? `${siteCount} site${siteCount > 1 ? 's' : ''} picked`
+  const baseSummary = siteCount ? `${siteCount} site${siteCount > 1 ? 's' : ''}`
                                  : (watch.keywords || []).join(', ') || 'no filter set';
-  const summary = watch.require_full_range ? `${baseSummary} \u00b7 full range only` : baseSummary;
+  const ended = watch.end_date && watch.end_date < new Date().toLocaleDateString('en-CA');
+  const summary = [
+    facilityLabel(watch),
+    formatDateRange(watch.start_date, watch.end_date) + (ended ? ' (ended)' : ''),
+    baseSummary + (watch.require_full_range ? ', full stay only' : ''),
+  ].join(' \u00b7 ');
 
   div.innerHTML = `
     <div class="watch-header" onclick="toggleWatchExpanded('${type}', ${idx})">
@@ -565,6 +650,7 @@ function toggleSiteChip(type, idx, unitId) {
     current.push(unitId);
   }
   watch.unit_ids = current;
+  markDirty();
   renderWatchList(type); // refresh chip highlighting
 }
 
@@ -596,10 +682,14 @@ function addWatch(type) {
   // Auto-expand the one you just added -- collapsing it immediately after
   // tapping "+ Add" would be a bad first impression.
   expandedWatches[`${type}:${state.config[type].length - 1}`] = true;
+  markDirty();
   renderWatchList(type);
 }
 
 function removeWatch(type, idx) {
+  const name = state.config[type][idx].name || 'this watch';
+  if (!confirm(`Remove "${name}"? It isn't deleted for good until you tap Save changes.`)) return;
+  markDirty();
   state.config[type].splice(idx, 1);
   // Indices shift after a removal, so any transient per-index state (park
   // selection, expand/collapse) would now point at the wrong watch --
@@ -641,6 +731,7 @@ async function saveConfig() {
   showToast('Saving to GitHub...', 'busy');
   try {
     await saveConfigWithConflictRetry();
+    clearDirty();
     showToast('Saved -- your desktop will pick this up within 5 minutes.', 'ok', 4000);
   } catch (e) {
     showToast('Save failed: ' + e.message, 'err', 6000);
@@ -687,12 +778,17 @@ async function saveConfigWithConflictRetry(retriesLeft = 1) {
   state.sha = data.content.sha;
 }
 
+// Any edit inside the app (typing, toggles, dropdowns) marks the form as having unsaved changes.
+['input', 'change'].forEach(evt => document.getElementById('appScreen').addEventListener(evt, markDirty));
+
 (async function init() {
   if (loadConnection()) {
     try {
       await loadConfigFromGitHub();
       enterApp();
     } catch (e) {
+      document.getElementById('loadingScreen').style.display = 'none';
+      document.getElementById('setupScreen').style.display = 'flex';
       document.getElementById('setupOwner').value = state.owner;
       document.getElementById('setupRepo').value = state.repo;
       document.getElementById('setupToken').value = state.token;
