@@ -76,11 +76,23 @@
   }
   h1 { font-size: 20px; margin: 0; }
   .header-row { display: flex; align-items: center; justify-content: space-between; }
+  .header-actions { display: flex; gap: 10px; }
   .btn-refresh {
     background: transparent; border: 1px solid var(--border); color: var(--text);
-    width: 34px; height: 34px; border-radius: 50%; font-size: 18px;
+    width: 40px; height: 40px; border-radius: 50%; font-size: 18px;
     display: flex; align-items: center; justify-content: center; padding: 0;
   }
+  .btn-refresh svg { width: 16px; height: 16px; fill: currentColor; }
+  .btn-refresh.active { border-color: var(--accent); color: var(--accent-text); }
+  .modal-backdrop { display: none; position: fixed; inset: 0; z-index: 50; align-items: center; justify-content: center;
+    padding: 16px; background: rgba(0, 0, 0, 0.55); }
+  .modal-backdrop.show { display: flex; }
+  .modal { width: 100%; max-width: 420px; background: var(--card); border: 1px solid var(--border);
+    border-radius: 16px; padding: 20px; box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5); }
+  .modal h2 { font-size: 17px; margin: 0 0 8px; }
+  .modal p { font-size: 14px; line-height: 1.45; color: var(--muted); margin: 0 0 18px; }
+  .modal-actions { display: flex; gap: 10px; }
+  .modal-actions button { flex: 1; }
   .btn-refresh.spinning { animation: spin 0.6s linear infinite; }
   @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
   .subtitle { color: var(--muted); font-size: 13px; margin-top: 2px; }
@@ -241,22 +253,16 @@
   <header>
     <div class="header-row">
       <h1>campwatch</h1>
-      <button class="btn-refresh" id="refreshBtn" onclick="manualRefresh()" title="Refresh from GitHub">&#8635;</button>
+      <div class="header-actions">
+        <button class="btn-refresh" id="pauseBtn" onclick="openPauseDialog()"></button>
+        <button class="btn-refresh" id="refreshBtn" onclick="manualRefresh()" title="Refresh from GitHub" aria-label="Refresh from GitHub">&#8635;</button>
+      </div>
     </div>
     <div class="subtitle" id="repoLabel"></div>
     <div class="freshness" id="freshnessBadge"></div>
   </header>
   <main>
     <div id="topStatus" class="status"></div>
-
-    <div class="card">
-      <div class="checkbox-row" style="margin:0">
-        <input type="checkbox" id="pauseAll">
-        <label for="pauseAll">Pause all scanning</label>
-      </div>
-      <div class="field-note">Stops every watch and all alerts until you turn this off. Anything that opens
-        meanwhile is still reported when you resume. Takes effect within 5 minutes of saving.</div>
-    </div>
 
     <div class="card collapsed" data-card="finds">
       <h2 onclick="toggleCard('finds')">Recent finds <span class="hint" id="findsHint"></span> <span class="chevron">&rsaquo;</span></h2>
@@ -342,6 +348,17 @@
       </div>
     </div>
   </main>
+
+  <div class="modal-backdrop" id="modal" onclick="if (event.target === this) closeModal()">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+      <h2 id="modalTitle"></h2>
+      <p id="modalBody"></p>
+      <div class="modal-actions">
+        <button class="btn-secondary" onclick="closeModal()">Cancel</button>
+        <button class="btn-primary" id="modalConfirm"></button>
+      </div>
+    </div>
+  </div>
 
   <div class="toast-bottom" id="bottomToast"></div>
   <div class="toolbar-bottom">
@@ -531,6 +548,13 @@ async function updateFreshnessBadge() {
       badge.className = 'freshness unknown';
       return;
     }
+    // The desktop picks up a pause/resume within 5 minutes; until its heartbeat
+    // agrees with what you asked for, say so instead of showing a stale state.
+    if (isPaused() !== !!status.paused) {
+      badge.textContent = isPaused() ? 'Pausing -- takes effect within 5 minutes' : 'Resuming -- takes effect within 5 minutes';
+      badge.className = 'freshness aging';
+      return;
+    }
     if (status.paused) {
       badge.textContent = 'Scanning is paused';
       badge.className = 'freshness unknown';
@@ -546,6 +570,89 @@ async function updateFreshnessBadge() {
     badge.textContent = 'Could not check freshness';
     badge.className = 'freshness unknown';
   }
+}
+
+const PAUSE_ICON = '<svg viewBox="0 0 16 16" aria-hidden="true"><rect x="3" y="2" width="3.5" height="12" rx="1"/><rect x="9.5" y="2" width="3.5" height="12" rx="1"/></svg>';
+const PLAY_ICON = '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 2.5v11a.7.7 0 0 0 1.07.6l9-5.5a.7.7 0 0 0 0-1.2l-9-5.5A.7.7 0 0 0 4 2.5z"/></svg>';
+
+function isPaused() {
+  return !!(state.config && state.config.schedule && state.config.schedule.paused);
+}
+
+function updatePauseButton() {
+  const btn = document.getElementById('pauseBtn');
+  const paused = isPaused();
+  btn.innerHTML = paused ? PLAY_ICON : PAUSE_ICON;
+  btn.classList.toggle('active', paused);
+  const label = paused ? 'Resume scanning' : 'Pause scanning';
+  btn.title = label;
+  btn.setAttribute('aria-label', label);
+}
+
+function openModal(title, body, confirmLabel, onConfirm) {
+  document.getElementById('modalTitle').textContent = title;
+  document.getElementById('modalBody').textContent = body;
+  const btn = document.getElementById('modalConfirm');
+  btn.textContent = confirmLabel;
+  btn.onclick = onConfirm;
+  document.getElementById('modal').classList.add('show');
+}
+
+function closeModal() {
+  document.getElementById('modal').classList.remove('show');
+}
+
+function openPauseDialog() {
+  const pausing = !isPaused();
+  if (pausing) {
+    openModal('Pause all scanning?',
+      'Every watch stops and no alerts are sent until you resume. Anything that opens in the meantime is still reported once you resume. Takes effect within 5 minutes.',
+      'Pause scanning', () => applyPause(true));
+  } else {
+    openModal('Resume scanning?',
+      'Checking restarts within 5 minutes. Anything that opened while paused will be reported then.',
+      'Resume', () => applyPause(false));
+  }
+}
+
+async function applyPause(pausing) {
+  closeModal();
+  showToast(pausing ? 'Pausing...' : 'Resuming...', 'busy');
+  try {
+    await savePausedFlag(pausing);
+    updatePauseButton();
+    updateFreshnessBadge();
+    showToast(pausing ? 'Paused -- the scanner stops within 5 minutes.' : 'Resumed -- the scanner restarts within 5 minutes.', 'ok', 4000);
+  } catch (e) {
+    showToast('Could not change scanning: ' + e.message, 'err', 6000);
+  }
+}
+
+// Saves only the pause flag, on top of GitHub's current copy, so any half-finished
+// edits in the form below are neither saved nor lost.
+async function savePausedFlag(paused) {
+  const url = `https://api.github.com/repos/${state.owner}/${state.repo}/contents/config.yaml`;
+  const getResp = await fetch(url, { headers: ghHeaders() });
+  if (!getResp.ok) throw new Error(`${getResp.status}`);
+  const data = await getResp.json();
+  const remoteCfg = jsyaml.load(decodeURIComponent(escape(atob(data.content)))) || {};
+  remoteCfg.schedule = remoteCfg.schedule || {};
+  remoteCfg.schedule.paused = paused;
+  const putResp = await fetch(url, {
+    method: 'PUT',
+    headers: ghHeaders(),
+    body: JSON.stringify({
+      message: paused ? 'Pause scanning via campwatch mobile UI' : 'Resume scanning via campwatch mobile UI',
+      content: btoa(unescape(encodeURIComponent(jsyaml.dump(remoteCfg, { lineWidth: 100 })))),
+      sha: data.sha
+    })
+  });
+  if (!putResp.ok) {
+    const body = await putResp.json().catch(() => ({}));
+    throw new Error(`${putResp.status} ${body.message || putResp.statusText}`);
+  }
+  state.sha = (await putResp.json()).content.sha;
+  state.config.schedule.paused = paused;
 }
 
 const UI_KEY = 'campwatch_ui';
@@ -645,7 +752,7 @@ function populateForm() {
   document.getElementById('activeStart').value = c.schedule.active_hours[0].start;
   document.getElementById('activeEnd').value = c.schedule.active_hours[0].end;
   document.getElementById('timezone').value = c.schedule.timezone;
-  document.getElementById('pauseAll').checked = !!c.schedule.paused;
+  updatePauseButton();
 
   document.getElementById('coverageInterval').value = c.speed.coverage_interval_minutes;
   document.getElementById('targetedInterval').value = c.speed.targeted_interval_minutes;
@@ -922,7 +1029,6 @@ function collectFormIntoConfig() {
   c.schedule.active_hours[0].start = document.getElementById('activeStart').value;
   c.schedule.active_hours[0].end = document.getElementById('activeEnd').value;
   c.schedule.timezone = document.getElementById('timezone').value;
-  c.schedule.paused = document.getElementById('pauseAll').checked;
 
   c.speed.coverage_interval_minutes = Number(document.getElementById('coverageInterval').value);
   c.speed.targeted_interval_minutes = Number(document.getElementById('targetedInterval').value);
