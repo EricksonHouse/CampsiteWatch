@@ -4,7 +4,7 @@ schedule:
     - start: '06:30'
       end: '22:30'
   skip_days: []
-  paused: false
+  paused: true
 speed:
   coverage_interval_minutes: 15
   targeted_interval_minutes: 2
