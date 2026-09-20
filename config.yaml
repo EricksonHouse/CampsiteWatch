@@ -18,7 +18,7 @@ speed:
 coverage:
   - name: Wright's Beach 2026
     facility_id: '706'
-    start_date: '2026-11-25'
+    start_date: '2027-01-01'
     end_date: '2027-01-30'
     keywords: []
     exclude_ada: true
@@ -32,12 +32,7 @@ coverage:
       - '1679.1'
       - '1822.1'
       - '1967.1'
-      - '2805.1'
-      - '2921.1'
-      - '2091.1'
-      - '2214.1'
-      - '2337.1'
-      - '2691.1'
+    _park_select: '718'
   - name: Van Damme Sp 2027-upper
     facility_id: '743'
     start_date: '2027-04-01'
