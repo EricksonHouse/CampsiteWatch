@@ -12,16 +12,57 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="campwatch">
 <style>
+  /* Theme = light/dark palette (data-theme) x accent hue (data-accent). Dark + green is the default. */
   :root {
+    --h: 147;
+    color-scheme: dark;
     --bg: #0f1512;
     --card: #161f1a;
+    --field: #0c120f;
     --border: #2a352e;
     --text: #eaf0ec;
     --muted: #93a39a;
-    --accent: #4caf7d;
-    --accent-dim: #2e5c44;
     --danger: #d9695f;
+    --l: 49%;
+    --on-accent: #08150e;
+    --accent: hsl(var(--h) 37% var(--l));
+    --accent-dim: hsl(var(--h) 33% 28%);
+    --accent-text: hsl(var(--h) 55% 68%);
+    --ok-bg: #14301f;   --ok-fg: #8fe3b1;
+    --err-bg: #3a1a17;  --err-fg: #f0a89f;
+    --busy-bg: #17222d; --busy-fg: #9bc4e6;
+    --warn-bg: #3a3319; --warn-fg: #e3c98f;
+    --idle-bg: #1a2230; --idle-fg: #93a39a;
   }
+  :root[data-theme="light"] {
+    color-scheme: light;
+    --bg: #f2f5f3;
+    --card: #ffffff;
+    --field: #f6f9f7;
+    --border: #d3dcd6;
+    --text: #16201a;
+    --muted: #5a6a61;
+    --danger: #b3372c;
+    --on-accent: #ffffff;
+    --accent: hsl(var(--h) 45% 32%);
+    --accent-dim: hsl(var(--h) 38% 86%);
+    --accent-text: hsl(var(--h) 55% 27%);
+    --ok-bg: #d9f2e3;   --ok-fg: #14532d;
+    --err-bg: #fbe1de;  --err-fg: #8c2a20;
+    --busy-bg: #dcebf7; --busy-fg: #1d4e75;
+    --warn-bg: #f6ecc9; --warn-fg: #6b5310;
+    --idle-bg: #e4eaf1; --idle-fg: #55636f;
+  }
+  :root[data-accent="blue"]   { --h: 212; --l: 62%; }
+  :root[data-accent="purple"] { --h: 268; --l: 66%; }
+  :root[data-accent="orange"] { --h: 28;  --l: 52%; }
+  :root[data-accent="rose"]   { --h: 345; --l: 62%; }
+  /* Home-screen app on iPhone: the status bar text is always white, so keep a dark strip behind it in light mode. */
+  :root[data-theme="light"]::before {
+    content: ''; position: fixed; top: 0; left: 0; right: 0; height: env(safe-area-inset-top);
+    background: #0f1512; z-index: 100;
+  }
+  input[type=checkbox] { accent-color: var(--accent); }
   * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
   body {
     margin: 0; background: var(--bg); color: var(--text);
@@ -47,10 +88,10 @@
     display: inline-block; margin-top: 8px; font-size: 12px; font-weight: 600;
     padding: 4px 10px; border-radius: 999px;
   }
-  .freshness.fresh { background: #14301f; color: #8fe3b1; }
-  .freshness.aging { background: #3a3319; color: #e3c98f; }
-  .freshness.stale { background: #3a1a17; color: #f0a89f; }
-  .freshness.unknown { background: #1a2230; color: #93a39a; }
+  .freshness.fresh { background: var(--ok-bg); color: var(--ok-fg); }
+  .freshness.aging { background: var(--warn-bg); color: var(--warn-fg); }
+  .freshness.stale { background: var(--err-bg); color: var(--err-fg); }
+  .freshness.unknown { background: var(--idle-bg); color: var(--idle-fg); }
   main { padding: 12px 16px 40px; max-width: 640px; margin: 0 auto; }
   .card {
     background: var(--card); border: 1px solid var(--border); border-radius: 14px;
@@ -66,7 +107,7 @@
   label:first-child { margin-top: 0; }
   input[type=text], input[type=number], input[type=time], input[type=date], select, textarea {
     width: 100%; padding: 10px 12px; border-radius: 10px; border: 1px solid var(--border);
-    background: #0c120f; color: var(--text); font-size: 16px; font-family: inherit; /* 16px stops iOS zooming in on focus */
+    background: var(--field); color: var(--text); font-size: 16px; font-family: inherit; /* 16px stops iOS zooming in on focus */
   }
   input:focus, select:focus, textarea:focus { outline: 2px solid var(--accent-dim); }
   .row { display: flex; gap: 10px; }
@@ -79,7 +120,7 @@
     font-family: inherit; font-size: 15px; border-radius: 10px; border: none;
     padding: 12px 16px; cursor: pointer; font-weight: 600;
   }
-  .btn-primary { background: var(--accent); color: #08150e; width: 100%; }
+  .btn-primary { background: var(--accent); color: var(--on-accent); width: 100%; }
   .btn-secondary { background: transparent; color: var(--text); border: 1px solid var(--border); width: 100%; }
   .btn-danger { background: transparent; color: var(--danger); border: 1px solid var(--danger); padding: 8px 12px; font-size: 14px; min-height: 44px; width: 100%; }
   .btn-small { background: var(--accent-dim); color: var(--text); padding: 8px 14px; font-size: 14px; min-height: 40px; }
@@ -99,7 +140,7 @@
   .site-toolbar { display: flex; align-items: center; gap: 8px; margin-top: 6px; }
   .site-toolbar .site-count { flex: 1; font-size: 12px; color: var(--muted); }
   .watch-item {
-    border: 1px solid var(--border); border-radius: 10px; padding: 12px; margin-bottom: 10px; background: #0c120f;
+    border: 1px solid var(--border); border-radius: 10px; padding: 12px; margin-bottom: 10px; background: var(--field);
   }
   .watch-item .watch-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; cursor: pointer; user-select: none; min-height: 44px; }
   .watch-item .watch-header span:first-child { font-weight: 600; font-size: 14px; display: flex; flex-direction: column; gap: 2px; }
@@ -110,11 +151,11 @@
   .watch-item:not(.expanded) .watch-body { display: none; }
   .site-picker { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
   .site-chip {
-    background: #0c120f; border: 1px solid var(--border); color: var(--text);
+    background: var(--field); border: 1px solid var(--border); color: var(--text);
     border-radius: 999px; padding: 9px 14px; font-size: 14px; cursor: pointer;
     font-family: inherit; min-height: 40px; font-weight: normal;
   }
-  .site-chip-selected { background: var(--accent); color: #08150e; border-color: var(--accent); font-weight: 600; }
+  .site-chip-selected { background: var(--accent); color: var(--on-accent); border-color: var(--accent); font-weight: 600; }
   .toolbar-bottom {
     position: fixed; bottom: 0; left: 0; right: 0; background: var(--bg);
     border-top: 1px solid var(--border); padding: 10px 16px calc(10px + env(safe-area-inset-bottom));
@@ -128,14 +169,14 @@
     box-shadow: 0 4px 16px rgba(0,0,0,0.4);
   }
   .toast-bottom.show { opacity: 1; }
-  .toast-bottom.ok { background: #14301f; color: #8fe3b1; }
-  .toast-bottom.err { background: #3a1a17; color: #f0a89f; }
-  .toast-bottom.busy { background: #17222d; color: #9bc4e6; }
+  .toast-bottom.ok { background: var(--ok-bg); color: var(--ok-fg); }
+  .toast-bottom.err { background: var(--err-bg); color: var(--err-fg); }
+  .toast-bottom.busy { background: var(--busy-bg); color: var(--busy-fg); }
   .status { font-size: 13px; padding: 10px 12px; border-radius: 10px; margin-bottom: 12px; display: none; }
   .status.show { display: block; }
-  .status.ok { background: #14301f; color: #8fe3b1; }
-  .status.err { background: #3a1a17; color: #f0a89f; }
-  .status.busy { background: #17222d; color: #9bc4e6; }
+  .status.ok { background: var(--ok-bg); color: var(--ok-fg); }
+  .status.err { background: var(--err-bg); color: var(--err-fg); }
+  .status.busy { background: var(--busy-bg); color: var(--busy-fg); }
   #setupScreen { display: flex; }
   #appScreen { display: none; }
   #loadingScreen { display: none; padding: 80px 16px; text-align: center; color: var(--muted); font-size: 14px; }
@@ -143,11 +184,29 @@
   .has-conn #loadingScreen { display: block; }
   .watch-item .watch-summary { line-height: 1.35; }
   .field-note { font-size: 11px; color: var(--muted); margin-top: 4px; }
-  a { color: var(--accent); }
+  a { color: var(--accent-text); }
+  .swatches { display: flex; gap: 12px; margin-top: 6px; }
+  .swatch { width: 44px; height: 44px; border-radius: 50%; padding: 0; border: 3px solid transparent;
+    background: hsl(var(--sw) 42% 48%); box-shadow: 0 0 0 1px var(--border); }
+  .swatch.selected { border-color: var(--text); }
 </style>
+<meta name="theme-color" content="#0f1512">
 <script>
-  // Runs before first paint: if this device is already connected, show a loading
-  // state instead of flashing the Connect form while the config loads.
+  // Runs before first paint: apply the saved theme, and if this device is already
+  // connected show a loading state instead of flashing the Connect form.
+  function loadTheme() { try { return JSON.parse(localStorage.getItem('campwatch_theme')) || {}; } catch (e) { return {}; } }
+  function saveTheme(t) { try { localStorage.setItem('campwatch_theme', JSON.stringify(t)); } catch (e) {} }
+  function applyTheme(t) {
+    t = t || {};
+    var mode = t.mode || 'dark';
+    var light = mode === 'light' || (mode === 'auto' && window.matchMedia && matchMedia('(prefers-color-scheme: light)').matches);
+    var root = document.documentElement;
+    root.dataset.theme = light ? 'light' : 'dark';
+    root.dataset.accent = t.accent || 'green';
+    var meta = document.querySelector('meta[name="theme-color"]');
+    if (meta) meta.content = light ? '#f2f5f3' : '#0f1512';
+  }
+  applyTheme(loadTheme());
   try { if (localStorage.getItem('campwatch_conn')) document.documentElement.classList.add('has-conn'); } catch (e) {}
 </script>
 </head>
@@ -261,6 +320,22 @@
         <div class="checkbox-row"><input type="checkbox" id="notifyNtfy"><label for="notifyNtfy">Push (ntfy)</label></div>
         <div class="field-note">Passwords and topic names stay on the desktop, not here.
           This just turns each channel on or off.</div>
+
+        <h3 class="subhead">Appearance <span class="hint">this device only</span></h3>
+        <label>Mode</label>
+        <select id="themeMode" data-local onchange="setThemeMode(this.value)">
+          <option value="dark">Dark</option>
+          <option value="light">Light</option>
+          <option value="auto">Match my phone</option>
+        </select>
+        <label>Accent colour</label>
+        <div class="swatches" data-local>
+          <button type="button" class="swatch" data-accent="green"  style="--sw:147" aria-label="Green"  onclick="setAccent('green')"></button>
+          <button type="button" class="swatch" data-accent="blue"   style="--sw:212" aria-label="Blue"   onclick="setAccent('blue')"></button>
+          <button type="button" class="swatch" data-accent="purple" style="--sw:268" aria-label="Purple" onclick="setAccent('purple')"></button>
+          <button type="button" class="swatch" data-accent="orange" style="--sw:28"  aria-label="Orange" onclick="setAccent('orange')"></button>
+          <button type="button" class="swatch" data-accent="rose"   style="--sw:345" aria-label="Rose"   onclick="setAccent('rose')"></button>
+        </div>
 
         <h3 class="subhead">This device</h3>
         <button class="btn-secondary" onclick="disconnect()">Disconnect this device</button>
@@ -379,6 +454,7 @@ function enterApp() {
   document.getElementById('repoLabel').textContent = `${state.owner}/${state.repo}`;
   populateForm();
   applySavedCardState();
+  refreshAppearanceControls();
   updateFreshnessBadge();
   setInterval(updateFreshnessBadge, 60000); // keep it live without touching the form
 }
@@ -498,6 +574,28 @@ function applySavedCardState() {
   document.querySelectorAll('[data-card]').forEach(card => {
     const saved = collapsed[card.dataset.card];
     if (typeof saved === 'boolean') card.classList.toggle('collapsed', saved);
+  });
+}
+
+// Appearance is saved on this device only (never in config.yaml), so it never counts as an unsaved change.
+function setThemeMode(mode) {
+  const t = loadTheme(); t.mode = mode; saveTheme(t); applyTheme(t);
+}
+
+function setAccent(name) {
+  const t = loadTheme(); t.accent = name; saveTheme(t); applyTheme(t);
+  refreshAppearanceControls();
+}
+
+function refreshAppearanceControls() {
+  const t = loadTheme();
+  document.getElementById('themeMode').value = t.mode || 'dark';
+  document.querySelectorAll('.swatch').forEach(b => b.classList.toggle('selected', b.dataset.accent === (t.accent || 'green')));
+}
+
+if (window.matchMedia) {
+  matchMedia('(prefers-color-scheme: light)').addEventListener?.('change', () => {
+    if (loadTheme().mode === 'auto') applyTheme(loadTheme());
   });
 }
 
@@ -905,7 +1003,9 @@ async function saveConfigWithConflictRetry(retriesLeft = 1) {
 }
 
 // Any edit inside the app (typing, toggles, dropdowns) marks the form as having unsaved changes.
-['input', 'change'].forEach(evt => document.getElementById('appScreen').addEventListener(evt, markDirty));
+['input', 'change'].forEach(evt => document.getElementById('appScreen').addEventListener(evt, e => {
+  if (!e.target.closest('[data-local]')) markDirty();
+}));
 
 (async function init() {
   if (loadConnection()) {
