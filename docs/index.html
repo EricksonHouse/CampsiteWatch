@@ -84,6 +84,14 @@
   .btn-danger { background: transparent; color: var(--danger); border: 1px solid var(--danger); padding: 8px 12px; font-size: 14px; min-height: 44px; width: 100%; }
   .btn-small { background: var(--accent-dim); color: var(--text); padding: 8px 14px; font-size: 14px; min-height: 40px; }
   .field-warn { font-size: 12px; color: var(--danger); margin-top: 4px; }
+  .watch-item.watch-off { opacity: 0.6; }
+  .find-item { border-top: 1px solid var(--border); padding: 12px 0; }
+  .find-item:first-child { border-top: none; padding-top: 0; }
+  .find-head { display: flex; justify-content: space-between; gap: 8px; font-size: 14px; }
+  .find-time { color: var(--muted); font-size: 12px; white-space: nowrap; }
+  .find-sub { color: var(--muted); font-size: 12px; margin-top: 2px; }
+  .find-sites { margin: 8px 0; padding-left: 18px; font-size: 13px; }
+  .find-item a { font-size: 13px; }
   .site-toolbar { display: flex; align-items: center; gap: 8px; margin-top: 6px; }
   .site-toolbar .site-count { flex: 1; font-size: 12px; color: var(--muted); }
   .watch-item {
@@ -177,6 +185,22 @@
   </header>
   <main>
     <div id="topStatus" class="status"></div>
+
+    <div class="card">
+      <div class="checkbox-row" style="margin:0">
+        <input type="checkbox" id="pauseAll">
+        <label for="pauseAll">Pause all scanning</label>
+      </div>
+      <div class="field-note">Stops every watch and all alerts until you turn this off. Anything that opens
+        meanwhile is still reported when you resume. Takes effect within 5 minutes of saving.</div>
+    </div>
+
+    <div class="card collapsed" data-card="finds">
+      <h2 onclick="toggleCard('finds')">Recent finds <span class="hint" id="findsHint"></span> <span class="chevron">&rsaquo;</span></h2>
+      <div class="card-body" id="findsBody">
+        <div class="field-note">Nothing found yet.</div>
+      </div>
+    </div>
 
     <div class="card collapsed" data-card="activeHours">
       <h2 onclick="toggleCard('activeHours')">Active hours <span class="hint">when alerts are sent</span> <span class="chevron">&rsaquo;</span></h2>
@@ -382,6 +406,26 @@ function freshnessLevel(isoString) {
   return 'stale';                     // desktop likely off, sleeping, or disconnected
 }
 
+function renderFinds(status) {
+  const finds = (status && status.recent_finds) || [];
+  document.getElementById('findsHint').textContent = finds.length ? `${finds.length} recent` : '';
+  const body = document.getElementById('findsBody');
+  if (!finds.length) {
+    body.innerHTML = '<div class="field-note">Nothing found yet. New openings will show up here.</div>';
+    return;
+  }
+  body.innerHTML = finds.map(f => `
+    <div class="find-item">
+      <div class="find-head"><strong>${esc(f.watch)}</strong><span class="find-time">${esc(formatRelativeTime(f.at))}</span></div>
+      <div class="find-sub">${esc(f.facility)}</div>
+      <ul class="find-sites">
+        ${(f.sites || []).map(s => `<li>${esc(s)}</li>`).join('')}
+        ${f.more ? `<li>+${Number(f.more)} more site${f.more > 1 ? 's' : ''}</li>` : ''}
+      </ul>
+      ${/^https:\/\//.test(f.link || '') ? `<a href="${esc(f.link)}" target="_blank" rel="noopener">Open ReserveCalifornia</a>` : ''}
+    </div>`).join('');
+}
+
 async function fetchHeartbeat() {
   // The desktop writes its heartbeat to status.json on a separate `status`
   // branch (so it doesn't trigger Pages rebuilds). Fall back to the old
@@ -406,9 +450,15 @@ async function updateFreshnessBadge() {
   const badge = document.getElementById('freshnessBadge');
   try {
     const status = await fetchHeartbeat();
+    renderFinds(status);
 
     if (!status || !status.last_checked) {
       badge.textContent = 'Desktop hasn\'t reported in yet';
+      badge.className = 'freshness unknown';
+      return;
+    }
+    if (status.paused) {
+      badge.textContent = 'Scanning is paused';
       badge.className = 'freshness unknown';
       return;
     }
@@ -499,6 +549,7 @@ function populateForm() {
   document.getElementById('activeStart').value = c.schedule.active_hours[0].start;
   document.getElementById('activeEnd').value = c.schedule.active_hours[0].end;
   document.getElementById('timezone').value = c.schedule.timezone;
+  document.getElementById('pauseAll').checked = !!c.schedule.paused;
 
   document.getElementById('coverageInterval').value = c.speed.coverage_interval_minutes;
   document.getElementById('targetedInterval').value = c.speed.targeted_interval_minutes;
@@ -527,7 +578,8 @@ function renderWatchItem(type, watch, idx) {
   const div = document.createElement('div');
   const watchKey = `${type}:${idx}`;
   const isExpanded = !!expandedWatches[watchKey];
-  div.className = 'watch-item' + (isExpanded ? ' expanded' : '');
+  const isOff = watch.enabled === false;
+  div.className = 'watch-item' + (isExpanded ? ' expanded' : '') + (isOff ? ' watch-off' : '');
   const unitIds = (watch.unit_ids || []).map(String);
   const siteRef = state.config.site_reference && state.config.site_reference[String(watch.facility_id)];
   const parkRef = state.config.park_reference || {};
@@ -551,6 +603,7 @@ function renderWatchItem(type, watch, idx) {
                                  : (watch.keywords || []).join(', ') || 'no filter set';
   const ended = watch.end_date && watch.end_date < new Date().toLocaleDateString('en-CA');
   const summary = [
+    ...(isOff ? ['Paused'] : []),
     facilityLabel(watch),
     formatDateRange(watch.start_date, watch.end_date) + (ended ? ' (ended)' : ''),
     baseSummary + (watch.require_full_range ? ', full stay only' : ''),
@@ -587,6 +640,10 @@ function renderWatchItem(type, watch, idx) {
       <span class="chevron">&rsaquo;</span>
     </div>
     <div class="watch-body">
+    <div class="checkbox-row" style="margin-top:0">
+      <input type="checkbox" data-field="enabled" ${isOff ? '' : 'checked'}>
+      <label>Watching this trip <span class="field-note" style="display:inline">(turn off to pause just this watch)</span></label>
+    </div>
     <label>Name</label>
     <input type="text" data-field="name" value="${esc(watch.name || '')}" placeholder="e.g. Pfeiffer Big Sur SP">
 
@@ -720,10 +777,12 @@ function updateWatchField(type, idx, input) {
     watch.keywords = input.value.split(',').map(s => s.trim()).filter(Boolean);
   } else if (field === 'require_full_range') {
     watch.require_full_range = input.checked;
+  } else if (field === 'enabled') {
+    watch.enabled = input.checked;
   } else {
     watch[field] = input.value;
   }
-  if (['name', 'facility_id', 'start_date', 'end_date'].includes(field)) renderWatchList(type); // refresh header summary, site picker, night count
+  if (['name', 'facility_id', 'start_date', 'end_date', 'enabled'].includes(field)) renderWatchList(type); // refresh header summary, site picker, night count
 }
 
 function toggleWatchExpanded(type, idx) {
@@ -767,6 +826,7 @@ function collectFormIntoConfig() {
   c.schedule.active_hours[0].start = document.getElementById('activeStart').value;
   c.schedule.active_hours[0].end = document.getElementById('activeEnd').value;
   c.schedule.timezone = document.getElementById('timezone').value;
+  c.schedule.paused = document.getElementById('pauseAll').checked;
 
   c.speed.coverage_interval_minutes = Number(document.getElementById('coverageInterval').value);
   c.speed.targeted_interval_minutes = Number(document.getElementById('targetedInterval').value);
