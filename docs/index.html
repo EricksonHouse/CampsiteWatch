@@ -165,8 +165,21 @@
     border: 1px solid var(--border); border-radius: 10px; padding: 12px; margin-bottom: 10px; background: var(--field);
   }
   .watch-item .watch-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; cursor: pointer; user-select: none; min-height: 44px; }
-  .watch-item .watch-header span:first-child { font-weight: 600; font-size: 14px; display: flex; flex-direction: column; gap: 2px; }
-  .watch-item .watch-summary { font-weight: normal; font-size: 12px; color: var(--muted); }
+  .watch-item .watch-title { flex: 1; min-width: 0; font-weight: 600; font-size: 14px; display: flex; flex-direction: column; gap: 3px; }
+  .watch-item .watch-summary { font-weight: normal; font-size: 12px; color: var(--muted); display: flex; flex-wrap: wrap; gap: 2px 12px; }
+  .watch-summary .ws { display: inline-flex; align-items: center; }
+  .icon.xs { width: 12px; height: 12px; margin-right: 4px; stroke: currentColor; }
+  .icon.st-active { stroke: var(--accent-text); }
+  .icon.st-paused, .icon.st-ended { stroke: var(--muted); }
+  .icon.st-incomplete { stroke: var(--danger); }
+  .watch-header > .icon { margin-right: 10px; }
+  .tag { font-size: 11px; font-weight: 600; padding: 1px 8px; border-radius: 999px; background: var(--idle-bg); color: var(--idle-fg); }
+  .tag-incomplete { background: var(--err-bg); color: var(--err-fg); }
+  .ended-toggle { display: flex; align-items: center; width: 100%; min-height: 44px; margin-bottom: 10px; padding: 10px 12px;
+    background: transparent; border: 1px dashed var(--border); border-radius: 10px; color: var(--muted); font-size: 13px; font-weight: 600; }
+  .ended-toggle .icon { stroke: var(--muted); width: 16px; height: 16px; margin-right: 8px; }
+  .ended-toggle .chevron { margin-left: auto; font-size: 20px; transform: rotate(0deg); transition: transform 0.15s; }
+  .ended-toggle.open .chevron { transform: rotate(90deg); }
   .watch-item .watch-header .chevron { color: var(--muted); font-size: 20px; transform: rotate(90deg); transition: transform 0.15s; }
   .watch-item:not(.expanded) .watch-header .chevron { transform: rotate(0deg); }
   .watch-item:not(.expanded) .watch-header { margin-bottom: 0; }
@@ -243,6 +256,13 @@
   <symbol id="i-bolt" viewBox="0 0 24 24"><path d="M13 2 4 14h7l-1 8 9-12h-7z"/></symbol>
   <symbol id="i-bell" viewBox="0 0 24 24"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.9 1.9 0 0 0 3.4 0"/></symbol>
   <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></symbol>
+  <symbol id="i-pin" viewBox="0 0 24 24"><path d="M12 21s7-6.2 7-11.5A7 7 0 0 0 5 9.5C5 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></symbol>
+  <symbol id="i-calendar" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></symbol>
+  <symbol id="i-list" viewBox="0 0 24 24"><path d="M9 6h12M9 12h12M9 18h12M3.5 6h.01M3.5 12h.01M3.5 18h.01"/></symbol>
+  <symbol id="i-eye" viewBox="0 0 24 24"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></symbol>
+  <symbol id="i-pause" viewBox="0 0 24 24"><path d="M9 5v14M15 5v14"/></symbol>
+  <symbol id="i-flag" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="m8 12.5 2.8 2.8L16 9.5"/></symbol>
+  <symbol id="i-alert" viewBox="0 0 24 24"><path d="M12 3 2 20h20L12 3z"/><path d="M12 10v4M12 17.5v.01"/></symbol>
   <symbol id="i-phone" viewBox="0 0 24 24"><rect x="7" y="2" width="10" height="20" rx="2"/><path d="M11 18h2"/></symbol>
 </svg>
 
@@ -691,7 +711,7 @@ async function savePausedFlag(paused) {
   state.config.schedule.paused = paused;
 }
 
-const BUILD = '2026-09-19.10';
+const BUILD = '2026-09-19.11';
 
 // Home-screen apps cache the page hard and resume from the background without reloading.
 // Compare the running build with the latest published one and reload if they differ.
@@ -827,20 +847,66 @@ function populateForm() {
   renderWatchList('targeted');
 }
 
+// Display order only -- the stored list (and each watch's index) never changes.
+// Needs-setup first, then active, then paused; ended watches fold away below.
+const STATUS_INFO = {
+  incomplete: { icon: 'alert', tag: 'Needs setup', rank: 0 },
+  active:     { icon: 'eye',   tag: '',            rank: 1 },
+  paused:     { icon: 'pause', tag: 'Paused',      rank: 2 },
+  ended:      { icon: 'flag',  tag: 'Ended',       rank: 3 },
+};
+
+function todayIso() { return new Date().toLocaleDateString('en-CA'); }
+
+function watchStatus(w) {
+  const s = parseIsoDate(w.start_date), e = parseIsoDate(w.end_date);
+  if (!w.facility_id || !s || !e || e < s) return 'incomplete';
+  if (w.end_date < todayIso()) return 'ended';
+  if (w.enabled === false) return 'paused';
+  return 'active';
+}
+
 function renderWatchList(type) {
   const container = document.getElementById(type + 'List');
   container.innerHTML = '';
-  (state.config[type] || []).forEach((watch, idx) => {
-    container.appendChild(renderWatchItem(type, watch, idx));
-  });
+  const items = (state.config[type] || []).map((watch, idx) => ({ watch, idx, status: watchStatus(watch) }));
+  items.sort((a, b) =>
+    STATUS_INFO[a.status].rank - STATUS_INFO[b.status].rank
+    || (a.watch.start_date || '').localeCompare(b.watch.start_date || '')
+    || (a.watch.name || '').localeCompare(b.watch.name || ''));
+
+  // An ended watch you're in the middle of editing stays put instead of vanishing into the fold.
+  const isEnded = i => i.status === 'ended' && !expandedWatches[`${type}:${i.idx}`];
+  items.filter(i => !isEnded(i)).forEach(i => container.appendChild(renderWatchItem(type, i.watch, i.idx, i.status)));
+
+  const ended = items.filter(isEnded);
+  if (ended.length) {
+    const open = !!(loadUiPrefs().endedOpen || {})[type];
+    const toggle = document.createElement('button');
+    toggle.type = 'button';
+    toggle.className = 'ended-toggle' + (open ? ' open' : '');
+    toggle.innerHTML = `<svg class="icon"><use href="#i-flag"/></svg>Ended (${ended.length})<span class="chevron">&rsaquo;</span>`;
+    toggle.onclick = () => toggleEnded(type);
+    container.appendChild(toggle);
+    if (open) ended.forEach(i => container.appendChild(renderWatchItem(type, i.watch, i.idx, i.status)));
+  }
 }
 
-function renderWatchItem(type, watch, idx) {
+function toggleEnded(type) {
+  const prefs = loadUiPrefs();
+  prefs.endedOpen = prefs.endedOpen || {};
+  prefs.endedOpen[type] = !prefs.endedOpen[type];
+  saveUiPrefs(prefs);
+  renderWatchList(type);
+}
+
+function renderWatchItem(type, watch, idx, status) {
+  status = status || watchStatus(watch);
   const div = document.createElement('div');
   const watchKey = `${type}:${idx}`;
   const isExpanded = !!expandedWatches[watchKey];
   const isOff = watch.enabled === false;
-  div.className = 'watch-item' + (isExpanded ? ' expanded' : '') + (isOff ? ' watch-off' : '');
+  div.className = 'watch-item' + (isExpanded ? ' expanded' : '') + (status === 'paused' || status === 'ended' ? ' watch-off' : '');
   const unitIds = (watch.unit_ids || []).map(String);
   const siteRef = state.config.site_reference && state.config.site_reference[String(watch.facility_id)];
   const parkRef = state.config.park_reference || {};
@@ -862,13 +928,12 @@ function renderWatchItem(type, watch, idx) {
   const siteCount = unitIds.length;
   const baseSummary = siteCount ? `${siteCount} site${siteCount > 1 ? 's' : ''}`
                                  : (watch.keywords || []).join(', ') || 'no filter set';
-  const ended = watch.end_date && watch.end_date < new Date().toLocaleDateString('en-CA');
-  const summary = [
-    ...(isOff ? ['Paused'] : []),
-    facilityLabel(watch),
-    formatDateRange(watch.start_date, watch.end_date) + (ended ? ' (ended)' : ''),
-    baseSummary + (watch.require_full_range ? ', full stay only' : ''),
-  ].join(' \u00b7 ');
+  const info = STATUS_INFO[status];
+  const summaryHtml = `
+    ${info.tag ? `<span class="ws tag tag-${status}">${info.tag}</span>` : ''}
+    <span class="ws"><svg class="icon xs"><use href="#i-pin"/></svg>${esc(facilityLabel(watch))}</span>
+    <span class="ws"><svg class="icon xs"><use href="#i-calendar"/></svg>${esc(formatDateRange(watch.start_date, watch.end_date))}</span>
+    <span class="ws"><svg class="icon xs"><use href="#i-list"/></svg>${esc(baseSummary + (watch.require_full_range ? ', full stay only' : ''))}</span>`;
 
   const startD = parseIsoDate(watch.start_date), endD = parseIsoDate(watch.end_date);
   let dateHint = '';
@@ -897,7 +962,8 @@ function renderWatchItem(type, watch, idx) {
 
   div.innerHTML = `
     <div class="watch-header" onclick="toggleWatchExpanded('${type}', ${idx})">
-      <span>${idx + 1}. ${esc(watch.name || 'New watch')}<span class="watch-summary">${esc(summary)}</span></span>
+      <svg class="icon st-${status}" role="img" aria-label="${info.tag || 'Watching'}"><use href="#i-${info.icon}"/></svg>
+      <span class="watch-title">${esc(watch.name || 'New watch')}<span class="watch-summary">${summaryHtml}</span></span>
       <span class="chevron">&rsaquo;</span>
     </div>
     <div class="watch-body">
