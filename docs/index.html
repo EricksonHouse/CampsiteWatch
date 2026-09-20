@@ -349,6 +349,7 @@
 
         <h3 class="subhead">This device</h3>
         <button class="btn-secondary" onclick="disconnect()">Disconnect this device</button>
+        <div class="field-note" id="buildLabel" style="text-align:center; margin-top:12px"></div>
       </div>
     </div>
   </main>
@@ -476,6 +477,7 @@ function enterApp() {
   populateForm();
   applySavedCardState();
   refreshAppearanceControls();
+  document.getElementById('buildLabel').textContent = `Version ${BUILD}`;
   updateFreshnessBadge();
   setInterval(updateFreshnessBadge, 60000); // keep it live without touching the form
 }
@@ -670,6 +672,28 @@ async function savePausedFlag(paused) {
   state.sha = (await putResp.json()).content.sha;
   state.config.schedule.paused = paused;
 }
+
+const BUILD = '2026-09-19.8';
+
+// Home-screen apps cache the page hard and resume from the background without reloading.
+// Compare the running build with the latest published one and reload if they differ.
+async function checkForNewVersion() {
+  try {
+    const resp = await fetch(location.pathname + '?_=' + Date.now(), { cache: 'no-store' });
+    if (!resp.ok) return;
+    const m = /const BUILD = '([^']+)'/.exec(await resp.text());
+    if (!m || m[1] === BUILD) return;
+    if (state.dirty) {
+      showToast('A new version is available. Save your changes, then reopen the app.', 'busy', 8000);
+      return;
+    }
+    const last = Number(sessionStorage.getItem('campwatch_reloaded_at') || 0);
+    if (Date.now() - last < 60000) return;   // guard against reload loops
+    sessionStorage.setItem('campwatch_reloaded_at', String(Date.now()));
+    location.replace(location.pathname + '?v=' + encodeURIComponent(m[1]));
+  } catch (e) { /* offline etc. -- keep running what we have */ }
+}
+document.addEventListener('visibilitychange', () => { if (!document.hidden) checkForNewVersion(); });
 
 const UI_KEY = 'campwatch_ui';
 
@@ -1128,6 +1152,8 @@ async function saveConfigWithConflictRetry(retriesLeft = 1) {
 ['input', 'change'].forEach(evt => document.getElementById('appScreen').addEventListener(evt, e => {
   if (!e.target.closest('[data-local]')) markDirty();
 }));
+
+checkForNewVersion();
 
 (async function init() {
   if (loadConnection()) {
