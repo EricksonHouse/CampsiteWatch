@@ -70,7 +70,8 @@
   }
   input:focus, select:focus, textarea:focus { outline: 2px solid var(--accent-dim); }
   .row { display: flex; gap: 10px; }
-  .row > * { flex: 1; }
+  .row > * { flex: 1; min-width: 0; }
+  input[type=date], input[type=time] { min-width: 0; padding-left: 10px; padding-right: 8px; }
   .checkbox-row { display: flex; align-items: center; gap: 8px; margin: 10px 0; }
   .checkbox-row input { width: 18px; height: 18px; }
   .checkbox-row label { margin: 0; color: var(--text); font-size: 14px; }
@@ -80,12 +81,15 @@
   }
   .btn-primary { background: var(--accent); color: #08150e; width: 100%; }
   .btn-secondary { background: transparent; color: var(--text); border: 1px solid var(--border); width: 100%; }
-  .btn-danger { background: transparent; color: var(--danger); border: 1px solid var(--danger); padding: 8px 12px; font-size: 13px; }
-  .btn-small { background: var(--accent-dim); color: var(--text); padding: 8px 12px; font-size: 13px; }
+  .btn-danger { background: transparent; color: var(--danger); border: 1px solid var(--danger); padding: 8px 12px; font-size: 14px; min-height: 44px; width: 100%; }
+  .btn-small { background: var(--accent-dim); color: var(--text); padding: 8px 14px; font-size: 14px; min-height: 40px; }
+  .field-warn { font-size: 12px; color: var(--danger); margin-top: 4px; }
+  .site-toolbar { display: flex; align-items: center; gap: 8px; margin-top: 6px; }
+  .site-toolbar .site-count { flex: 1; font-size: 12px; color: var(--muted); }
   .watch-item {
     border: 1px solid var(--border); border-radius: 10px; padding: 12px; margin-bottom: 10px; background: #0c120f;
   }
-  .watch-item .watch-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; cursor: pointer; user-select: none; }
+  .watch-item .watch-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; cursor: pointer; user-select: none; min-height: 44px; }
   .watch-item .watch-header span:first-child { font-weight: 600; font-size: 14px; display: flex; flex-direction: column; gap: 2px; }
   .watch-item .watch-summary { font-weight: normal; font-size: 12px; color: var(--muted); }
   .watch-item .watch-header .chevron { color: var(--muted); font-size: 20px; transform: rotate(90deg); transition: transform 0.15s; }
@@ -95,8 +99,8 @@
   .site-picker { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
   .site-chip {
     background: #0c120f; border: 1px solid var(--border); color: var(--text);
-    border-radius: 999px; padding: 6px 12px; font-size: 13px; cursor: pointer;
-    font-family: inherit;
+    border-radius: 999px; padding: 9px 14px; font-size: 14px; cursor: pointer;
+    font-family: inherit; min-height: 40px; font-weight: normal;
   }
   .site-chip-selected { background: var(--accent); color: #08150e; border-color: var(--accent); font-weight: 600; }
   .toolbar-bottom {
@@ -552,13 +556,37 @@ function renderWatchItem(type, watch, idx) {
     baseSummary + (watch.require_full_range ? ', full stay only' : ''),
   ].join(' \u00b7 ');
 
+  const startD = parseIsoDate(watch.start_date), endD = parseIsoDate(watch.end_date);
+  let dateHint = '';
+  if (startD && endD) {
+    const nights = Math.round((endD - startD) / 86400000);
+    dateHint = nights < 0
+      ? `<div class="field-warn">The end date is before the start date.</div>`
+      : `<div class="field-note">${nights} night${nights === 1 ? '' : 's'}</div>`;
+  }
+
+  const keywordsBlock = siteCount
+    ? `<div class="field-note" style="margin-top:12px">Matching only the ${siteCount} specific site${siteCount > 1 ? 's' : ''} picked below.
+         Clear the sites to match by keyword instead.</div>`
+    : `<label>Keywords <span class="field-note" style="display:inline">(comma-separated; used when no specific sites are picked)</span></label>
+       <input type="text" data-field="keywords" value="${esc((watch.keywords || []).join(', '))}" placeholder="premium, hookup, bluff">`;
+
+  const pickable = siteRef && siteRef.sites ? siteRef.sites.filter(s => !s.is_ada) : [];
+  const hasPremium = pickable.some(s => /premium/i.test(s.name));
+  const siteToolbar = pickable.length ? `
+    <div class="site-toolbar">
+      <span class="site-count">${siteCount} of ${pickable.length} selected</span>
+      <button type="button" class="btn-small" onclick="selectSites('${type}', ${idx}, 'all')">All</button>
+      ${hasPremium ? `<button type="button" class="btn-small" onclick="selectSites('${type}', ${idx}, 'premium')">Premium</button>` : ''}
+      <button type="button" class="btn-small" onclick="selectSites('${type}', ${idx}, 'none')">Clear</button>
+    </div>` : '';
+
   div.innerHTML = `
     <div class="watch-header" onclick="toggleWatchExpanded('${type}', ${idx})">
       <span>${idx + 1}. ${esc(watch.name || 'New watch')}<span class="watch-summary">${esc(summary)}</span></span>
       <span class="chevron">&rsaquo;</span>
     </div>
     <div class="watch-body">
-    <button class="btn-danger" onclick="event.stopPropagation(); removeWatch('${type}', ${idx})" style="margin-bottom:10px;">Remove this watch</button>
     <label>Name</label>
     <input type="text" data-field="name" value="${esc(watch.name || '')}" placeholder="e.g. Pfeiffer Big Sur SP">
 
@@ -590,6 +618,7 @@ function renderWatchItem(type, watch, idx) {
       <div><label>Start date</label><input type="date" data-field="start_date" value="${watch.start_date || ''}"></div>
       <div><label>End date</label><input type="date" data-field="end_date" value="${watch.end_date || ''}"></div>
     </div>
+    ${dateHint}
     ${type === 'targeted' ? `
       <div class="checkbox-row">
         <input type="checkbox" data-field="require_full_range" ${watch.require_full_range ? 'checked' : ''}>
@@ -598,12 +627,13 @@ function renderWatchItem(type, watch, idx) {
       <div class="field-note">Off (default): notified if any single night in the range opens.
         On: only notified when every night is open together on the same site, as one bookable stay.</div>
     ` : ''}
-    <label>Keywords <span class="field-note" style="display:inline">(comma-separated, ignored if specific sites are picked below)</span></label>
-    <input type="text" data-field="keywords" value="${esc((watch.keywords || []).join(', '))}" placeholder="premium, hookup, bluff">
-    <label>Specific sites <span class="field-note" style="display:inline">(optional -- tap to pick exact sites instead of matching by keyword)</span></label>
+    ${keywordsBlock}
+    <label>Specific sites <span class="field-note" style="display:inline">(optional)</span></label>
+    ${siteToolbar}
     <div class="site-picker" data-site-picker>
       ${renderSitePickerContents(type, idx, siteRef, unitIds)}
     </div>
+    <button class="btn-danger" onclick="event.stopPropagation(); removeWatch('${type}', ${idx})" style="margin-top:16px;">Remove this watch</button>
     </div>
   `;
   div.querySelectorAll('[data-field]').forEach(input => {
@@ -625,6 +655,35 @@ function renderSitePickerContents(type, idx, ref, selectedUnitIds) {
               ${esc(site.name)}${adaTag}
             </button>`;
   }).join('');
+}
+
+function selectSites(type, idx, mode) {
+  const watch = state.config[type][idx];
+  const ref = state.config.site_reference && state.config.site_reference[String(watch.facility_id)];
+  const sites = ((ref && ref.sites) || []).filter(s => !s.is_ada);
+  const chosen = mode === 'all' ? sites
+               : mode === 'premium' ? sites.filter(s => /premium/i.test(s.name))
+               : [];
+  watch.unit_ids = chosen.map(s => String(s.unit_id));
+  markDirty();
+  renderWatchList(type);
+}
+
+// Returns a message for the first watch that can't work, or '' if all are fine.
+function validateWatches() {
+  for (const type of ['coverage', 'targeted']) {
+    const list = state.config[type] || [];
+    for (let idx = 0; idx < list.length; idx++) {
+      const w = list[idx];
+      const label = `"${w.name || 'New watch'}"`;
+      let problem = '';
+      if (!w.facility_id) problem = 'choose a campground';
+      else if (!parseIsoDate(w.start_date) || !parseIsoDate(w.end_date)) problem = 'set both dates';
+      else if (w.end_date < w.start_date) problem = 'the end date is before the start date';
+      if (problem) return { type, idx, message: `${label}: ${problem}.` };
+    }
+  }
+  return null;
 }
 
 function onParkSelected(type, idx, placeId) {
@@ -664,7 +723,7 @@ function updateWatchField(type, idx, input) {
   } else {
     watch[field] = input.value;
   }
-  if (field === 'name' || field === 'facility_id') renderWatchList(type); // refresh header label / site picker
+  if (['name', 'facility_id', 'start_date', 'end_date'].includes(field)) renderWatchList(type); // refresh header summary, site picker, night count
 }
 
 function toggleWatchExpanded(type, idx) {
@@ -728,6 +787,15 @@ function collectFormIntoConfig() {
 
 async function saveConfig() {
   collectFormIntoConfig();
+  const problem = validateWatches();
+  if (problem) {
+    // Open the offending watch so the fix is one tap away.
+    document.querySelector(`[data-card="${problem.type}"]`).classList.remove('collapsed');
+    expandedWatches[`${problem.type}:${problem.idx}`] = true;
+    renderWatchList(problem.type);
+    showToast(`Not saved -- ${problem.message}`, 'err', 6000);
+    return;
+  }
   showToast('Saving to GitHub...', 'busy');
   try {
     await saveConfigWithConflictRetry();
