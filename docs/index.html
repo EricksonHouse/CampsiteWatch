@@ -63,6 +63,12 @@
     background: #0f1512; z-index: 100;
   }
   input[type=checkbox] { accent-color: var(--accent); }
+  .icon { width: 19px; height: 19px; flex: none; margin-right: 9px; fill: none; stroke: var(--accent-text);
+    stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+  .card h2 { white-space: nowrap; }
+  .card h2 .icon { margin-right: 10px; }
+  .card h2 .hint { overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+  .subhead .icon { width: 15px; height: 15px; margin-right: 7px; vertical-align: -3px; stroke: var(--accent-text); }
   * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
   body {
     margin: 0; background: var(--bg); color: var(--text);
@@ -228,6 +234,18 @@
 </head>
 <body>
 
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></symbol>
+  <symbol id="i-map" viewBox="0 0 24 24"><path d="M9 4 3 6.5v13L9 17l6 2.5 6-2.5v-13L15 6.5 9 4z"/><path d="M9 4v13M15 6.5v13"/></symbol>
+  <symbol id="i-target" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></symbol>
+  <symbol id="i-sliders" viewBox="0 0 24 24"><path d="M21 4h-7M10 4H3M21 12h-9M8 12H3M21 20h-5M12 20H3M14 2v4M8 10v4M16 18v4"/></symbol>
+  <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></symbol>
+  <symbol id="i-bolt" viewBox="0 0 24 24"><path d="M13 2 4 14h7l-1 8 9-12h-7z"/></symbol>
+  <symbol id="i-bell" viewBox="0 0 24 24"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.9 1.9 0 0 0 3.4 0"/></symbol>
+  <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></symbol>
+  <symbol id="i-phone" viewBox="0 0 24 24"><rect x="7" y="2" width="10" height="20" rx="2"/><path d="M11 18h2"/></symbol>
+</svg>
+
 <div id="loadingScreen">Loading your watches&hellip;</div>
 
 <div id="setupScreen">
@@ -269,14 +287,14 @@
     <div id="topStatus" class="status"></div>
 
     <div class="card collapsed" data-card="finds">
-      <h2 onclick="toggleCard('finds')">Recent finds <span class="hint" id="findsHint"></span> <span class="chevron">&rsaquo;</span></h2>
+      <h2 onclick="toggleCard('finds')"><svg class="icon"><use href="#i-search"/></svg>Recent finds <span class="hint" id="findsHint"></span> <span class="chevron">&rsaquo;</span></h2>
       <div class="card-body" id="findsBody">
         <div class="field-note">Nothing found yet.</div>
       </div>
     </div>
 
     <div class="card" data-card="coverage">
-      <h2 onclick="toggleCard('coverage')">Coverage watches <span class="hint">broad, multiple parks</span> <span class="chevron">&rsaquo;</span></h2>
+      <h2 onclick="toggleCard('coverage')"><svg class="icon"><use href="#i-map"/></svg>Coverage watches <span class="hint">broad, multiple parks</span> <span class="chevron">&rsaquo;</span></h2>
       <div class="card-body">
         <div id="coverageList"></div>
         <button class="btn-small" onclick="addWatch('coverage')">+ Add coverage watch</button>
@@ -284,7 +302,7 @@
     </div>
 
     <div class="card" data-card="targeted">
-      <h2 onclick="toggleCard('targeted')">Targeted watches <span class="hint">one specific trip, checked faster</span> <span class="chevron">&rsaquo;</span></h2>
+      <h2 onclick="toggleCard('targeted')"><svg class="icon"><use href="#i-target"/></svg>Targeted watches <span class="hint">one specific trip</span> <span class="chevron">&rsaquo;</span></h2>
       <div class="card-body">
         <div id="targetedList"></div>
         <button class="btn-small" onclick="addWatch('targeted')">+ Add targeted watch</button>
@@ -292,10 +310,10 @@
     </div>
 
     <div class="card collapsed" data-card="settings">
-      <h2 onclick="toggleCard('settings')">Settings <span class="hint">hours, speed, notifications</span> <span class="chevron">&rsaquo;</span></h2>
+      <h2 onclick="toggleCard('settings')"><svg class="icon"><use href="#i-sliders"/></svg>Settings <span class="hint">hours, speed, notifications</span> <span class="chevron">&rsaquo;</span></h2>
       <div class="card-body">
 
-        <h3 class="subhead first">Active hours <span class="hint">when alerts are sent</span></h3>
+        <h3 class="subhead first"><svg class="icon"><use href="#i-clock"/></svg>Active hours <span class="hint">when alerts are sent</span></h3>
         <div class="row">
           <div><label>From</label><input type="time" id="activeStart"></div>
           <div><label>To</label><input type="time" id="activeEnd"></div>
@@ -308,7 +326,7 @@
           <option value="America/New_York">Eastern</option>
         </select>
 
-        <h3 class="subhead">Scan speed</h3>
+        <h3 class="subhead"><svg class="icon"><use href="#i-bolt"/></svg>Scan speed</h3>
         <label>Coverage watches -- check every (minutes)</label>
         <input type="number" id="coverageInterval" min="5">
         <label>Targeted watches -- check every (minutes)</label>
@@ -324,14 +342,14 @@
         <label>During peak, targeted watches check every (minutes)</label>
         <input type="number" id="peakInterval" min="1">
 
-        <h3 class="subhead">Notifications</h3>
+        <h3 class="subhead"><svg class="icon"><use href="#i-bell"/></svg>Notifications</h3>
         <div class="checkbox-row"><input type="checkbox" id="notifyEmail"><label for="notifyEmail">Email</label></div>
         <div class="checkbox-row"><input type="checkbox" id="notifySms"><label for="notifySms">SMS</label></div>
         <div class="checkbox-row"><input type="checkbox" id="notifyNtfy"><label for="notifyNtfy">Push (ntfy)</label></div>
         <div class="field-note">Passwords and topic names stay on the desktop, not here.
           This just turns each channel on or off.</div>
 
-        <h3 class="subhead">Appearance <span class="hint">this device only</span></h3>
+        <h3 class="subhead"><svg class="icon"><use href="#i-sun"/></svg>Appearance <span class="hint">this device only</span></h3>
         <label>Mode</label>
         <select id="themeMode" data-local onchange="setThemeMode(this.value)">
           <option value="dark">Dark</option>
@@ -347,7 +365,7 @@
           <button type="button" class="swatch" data-accent="rose"   style="--sw:345" aria-label="Rose"   onclick="setAccent('rose')"></button>
         </div>
 
-        <h3 class="subhead">This device</h3>
+        <h3 class="subhead"><svg class="icon"><use href="#i-phone"/></svg>This device</h3>
         <button class="btn-secondary" onclick="disconnect()">Disconnect this device</button>
         <div class="field-note" id="buildLabel" style="text-align:center; margin-top:12px"></div>
       </div>
@@ -673,7 +691,7 @@ async function savePausedFlag(paused) {
   state.config.schedule.paused = paused;
 }
 
-const BUILD = '2026-09-19.8';
+const BUILD = '2026-09-19.10';
 
 // Home-screen apps cache the page hard and resume from the background without reloading.
 // Compare the running build with the latest published one and reload if they differ.
