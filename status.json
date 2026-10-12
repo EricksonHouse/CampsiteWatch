@@ -1,6 +1,17 @@
 {
-  "last_checked": "2026-10-12T07:57:13.398570-07:00",
+  "last_checked": "2026-10-12T08:02:42.069658-07:00",
   "watches_checked_last_cycle": 2,
   "paused": false,
-  "recent_finds": []
+  "recent_finds": [
+    {
+      "at": "2026-10-12T08:00:51.733394-07:00",
+      "watch": "Wrights Beach Site# PRM+ Xmas 2026",
+      "facility": "Wright's Beach (sites 1-27)",
+      "sites": [
+        "Premium Campsite #WB08: Dec 28"
+      ],
+      "more": 0,
+      "link": "https://www.reservecalifornia.com/?facility=706"
+    }
+  ]
 }
